@@ -3,11 +3,13 @@ package com.leclowndu93150.essentialpatcher;
 import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
 import com.leclowndu93150.essentialpatcher.config.PatcherConfigScreen;
 import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
+import com.leclowndu93150.essentialpatcher.httpsync.EssentialSpsSyncListener;
 import com.leclowndu93150.essentialpatcher.httpsync.SessionKey;
 import com.leclowndu93150.essentialpatcher.network.CosmeticSyncData;
 import com.leclowndu93150.essentialpatcher.network.CosmeticSyncPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.fml.ModList;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
@@ -28,6 +30,16 @@ import java.util.UUID;
 public class EssentialpatcherNeoForge {
 
     public EssentialpatcherNeoForge(IEventBus modBus) {
+        CompatibilityTracker.setPlatformVersionProvider(() -> {
+            try {
+                return ModList.get()
+                        .getModContainerById("essential")
+                        .map(c -> c.getModInfo().getVersion().toString())
+                        .orElse(null);
+            } catch (Exception e) {
+                return null;
+            }
+        });
         PatcherConfig config = PatcherConfig.get();
         ModLoadingContext.get().registerExtensionPoint(IConfigScreenFactory.class,
                 () -> (container, parent) -> PatcherConfigScreen.create(parent));
@@ -52,6 +64,7 @@ public class EssentialpatcherNeoForge {
                 return Minecraft.getInstance().getUser().getProfileId();
             }
         });
+        EssentialSpsSyncListener.register();
 
         if (config.disableAutoUpdate) {
             disableEssentialAutoUpdate("1.21.1");
@@ -85,7 +98,6 @@ public class EssentialpatcherNeoForge {
 
     private void onPlayerJoin(ClientPlayerNetworkEvent.LoggingIn event) {
         if (!PatcherConfig.get().unlockAllCosmetics) {
-            // still kick off http sync even if cosmetic unlock is disabled? no, gate together.
             return;
         }
         var player = Minecraft.getInstance().player;

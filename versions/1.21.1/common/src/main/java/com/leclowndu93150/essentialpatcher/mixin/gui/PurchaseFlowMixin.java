@@ -15,14 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
 
-/**
- * Intercepts every wardrobe purchase entry point. Instead of contacting Essential's
- * checkout infra (which would fail because we lie about prices via showAllFree), we
- * locally mark the catalog as "all unlocked" and report success to the GUI. The
- * unlockAllCosmetics call mutates CosmeticsManager.unlockedCosmeticsData so the
- * wardrobe UI immediately reflects the cosmetic as owned, the "Claim" button flips
- * to "Equip", and the purchase-success toast fires.
- */
 @Mixin(value = PurchaseKt.class, remap = false)
 public class PurchaseFlowMixin {
 
@@ -75,8 +67,6 @@ public class PurchaseFlowMixin {
     @Inject(method = "giftCosmeticOrEmote", at = @At("HEAD"), cancellable = true)
     private static void onGiftCosmetic(WardrobeState state, Item.CosmeticOrEmote item, UUID giftTo, Function2<? super Boolean, ? super String, Unit> callback, CallbackInfo ci) {
         if (PatcherConfig.get().disablePurchaseFlows) {
-            // Gifting actually needs a real recipient on Essential's side, so spoofing
-            // success would be a lie. Cancel quietly.
             callback.invoke(false, null);
             ci.cancel();
         }
@@ -85,9 +75,6 @@ public class PurchaseFlowMixin {
     @Inject(method = "openPurchaseItemModal", at = @At("HEAD"), cancellable = true)
     private static void onOpenPurchaseModal(WardrobeState state, Item item, Function0<Unit> primaryAction, CallbackInfo ci) {
         if (PatcherConfig.get().disablePurchaseFlows) {
-            // Run the primary action immediately instead of opening the modal.
-            // The primary action is the actual purchase call we intercept above,
-            // so it'll short-circuit to success via the other injectors.
             primaryAction.invoke();
             ci.cancel();
         }

@@ -2,10 +2,11 @@ package com.leclowndu93150.essentialpatcher.mixin.cosmetics;
 
 import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
 import com.leclowndu93150.essentialpatcher.cosmetics.CosmeticSaver;
+import com.leclowndu93150.essentialpatcher.httpsync.SyncedCosmeticOutfit;
+import com.leclowndu93150.essentialpatcher.network.CosmeticSyncData;
 import gg.essential.cosmetics.model.CosmeticUnlockData;
 import gg.essential.event.client.ClientTickEvent;
 import gg.essential.gui.elementa.state.v2.MutableState;
-import gg.essential.mod.cosmetics.CosmeticSlot;
 import gg.essential.network.connectionmanager.cosmetics.CosmeticsData;
 import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager;
 import gg.essential.network.connectionmanager.cosmetics.InfraEquippedOutfitsManager;
@@ -17,8 +18,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -89,10 +88,6 @@ public abstract class CosmeticsManagerMixin {
     @Inject(method = "claimFreeItems", at = @At("HEAD"), cancellable = true)
     private void onClaimFreeItems(Set<String> ids, CallbackInfoReturnable<CompletableFuture<Boolean>> cir) {
         if (PatcherConfig.get().unlockAllCosmetics) {
-            // The "claim free" flow normally sends a checkout packet to Essential's server.
-            // Since showAllFree makes everything appear free, that server-side check fails.
-            // Short-circuit with a successful future so the GUI plays the unlock toast and
-            // sound, and our existing unlockAllCosmetics path already handles the visual.
             cir.setReturnValue(CompletableFuture.completedFuture(true));
         }
     }
@@ -100,16 +95,8 @@ public abstract class CosmeticsManagerMixin {
     @Unique
     private void essentialPatcher$restoreOutfit() {
         try {
-            Map<String, String> saved = CosmeticSaver.loadEquippedCosmetics();
+            SyncedCosmeticOutfit saved = CosmeticSaver.loadOutfit();
             if (saved.isEmpty()) return;
-
-            Map<CosmeticSlot, String> cosmeticMap = new HashMap<>();
-            for (var entry : saved.entrySet()) {
-                CosmeticSlot slot = essentialPatcher$slotById(entry.getKey());
-                if (slot != null) {
-                    cosmeticMap.put(slot, entry.getValue());
-                }
-            }
 
             InfraEquippedOutfitsManager manager = getInfraEquippedOutfitsManager();
             var ownUuidMethod = manager.getClass().getDeclaredMethod("getOwnUuid");
@@ -118,21 +105,15 @@ public abstract class CosmeticsManagerMixin {
 
             var infraOutfitClass = Class.forName("gg.essential.network.connectionmanager.cosmetics.InfraEquippedOutfitsManager$InfraOutfit");
             var constructor = infraOutfitClass.getConstructors()[0];
-            var outfit = constructor.newInstance(cosmeticMap, Collections.emptyMap(), null);
+            var outfit = constructor.newInstance(
+                    CosmeticSyncData.toInfraCosmetics(saved.equipped()),
+                    CosmeticSyncData.toInfraSettings(saved.settings()),
+                    null
+            );
 
             manager.update(ownUuid, (InfraEquippedOutfitsManager.InfraOutfit) outfit);
         } catch (Exception e) {
             System.err.println("[EssentialPatcher] Failed to restore equipped cosmetics: " + e.getMessage());
         }
-    }
-
-    @Unique
-    private static CosmeticSlot essentialPatcher$slotById(String id) {
-        for (CosmeticSlot slot : CosmeticSlot.values()) {
-            if (slot.getId().equals(id)) {
-                return slot;
-            }
-        }
-        return null;
     }
 }

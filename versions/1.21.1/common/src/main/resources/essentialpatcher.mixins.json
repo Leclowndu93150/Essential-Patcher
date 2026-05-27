@@ -8,6 +8,7 @@
     "cosmetics.PricingInfoMixin",
     "cosmetics.InfraEquippedOutfitsMixin",
     "cosmetics.EmoteWheelMixin",
+    "cosmetics.OutfitUpdatesPayloadMixin",
     "telemetry.TelemetryManagerMixin",
     "telemetry.ImpressionTelemetryMixin",
     "telemetry.FPSTelemetryMixin",
@@ -25,11 +26,12 @@
     "gui.OnboardingMixin",
     "gui.WikiToastMixin",
     "gui.RulesManagerMixin",
-    "gui.ChatManagerMixin"
+    "gui.ChatManagerMixin",
+    "gui.TitleScreenMixin"
   ],
   "client": [],
   "server": [],
   "injectors": {
-    "defaultRequire": 1
+    "defaultRequire": 0
   }
 }

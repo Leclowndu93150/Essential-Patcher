@@ -1,9 +1,10 @@
 package com.leclowndu93150.essentialpatcher.httpsync;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
-import com.leclowndu93150.essentialpatcher.cosmetics.CosmeticSaver;
 import com.leclowndu93150.essentialpatcher.network.CosmeticSyncData;
 import gg.essential.Essential;
 import gg.essential.mod.cosmetics.CosmeticSlot;
@@ -18,7 +19,9 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,7 +81,9 @@ public final class CosmeticHttpSync {
     private ScheduledFuture<?> heartbeatTask;
     private Thread sseThread;
 
-    private final ConcurrentHashMap<UUID, Map<String, String>> sessionPeers = new ConcurrentHashMap<>();
+    private volatile String lastKeyIngredient;
+    private volatile String lastLabel;
+    private final ConcurrentHashMap<UUID, SyncedCosmeticOutfit> sessionPeers = new ConcurrentHashMap<>();
 
     public void setMojangJoiner(MojangJoiner j) {
         this.joiner = j;
@@ -104,9 +109,11 @@ public final class CosmeticHttpSync {
     public void onServerJoin(String keyIngredient, String label) {
         if (!isEnabled() || joiner == null) return;
         if (joined.get()) {
-            onServerLeave();
+            closeSession(false);
         }
         closing.set(false);
+        lastKeyIngredient = keyIngredient;
+        lastLabel = label;
         String sid = computeSessionId(keyIngredient, label);
         scheduler.submit(() -> {
             try {
@@ -116,10 +123,9 @@ public final class CosmeticHttpSync {
                 heartbeatTask = scheduler.scheduleAtFixedRate(this::heartbeat, 30, 30, TimeUnit.SECONDS);
                 joined.set(true);
 
-                Map<String, String> local = CosmeticSaver.loadEquippedCosmetics();
-                if (!local.isEmpty()) {
-                    pushCosmetics(local);
-                }
+                pushCurrentOutfit();
+                scheduler.schedule(this::pushCurrentOutfit, 2, TimeUnit.SECONDS);
+                scheduler.schedule(this::pushCurrentOutfit, 8, TimeUnit.SECONDS);
             } catch (Exception e) {
                 System.err.println("[EssentialPatcher] http sync join failed: " + e.getMessage());
                 joined.set(false);
@@ -128,6 +134,10 @@ public final class CosmeticHttpSync {
     }
 
     public void onServerLeave() {
+        closeSession(true);
+    }
+
+    private void closeSession(boolean notifyServer) {
         if (!joined.getAndSet(false)) return;
         closing.set(true);
         if (heartbeatTask != null) {
@@ -140,7 +150,16 @@ public final class CosmeticHttpSync {
         }
         sessionPeers.clear();
         String tk = token.get();
-        if (tk == null) return;
+        String sid = sessionId.get();
+        if (!notifyServer) {
+            token.compareAndSet(tk, null);
+            sessionId.compareAndSet(sid, null);
+            return;
+        }
+        if (tk == null) {
+            sessionId.compareAndSet(sid, null);
+            return;
+        }
         scheduler.submit(() -> {
             try {
                 HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/session/leave"))
@@ -151,17 +170,17 @@ public final class CosmeticHttpSync {
                 http.send(req, HttpResponse.BodyHandlers.discarding());
             } catch (Exception ignored) {
             }
-            token.set(null);
-            sessionId.set(null);
+            token.compareAndSet(tk, null);
+            sessionId.compareAndSet(sid, null);
         });
     }
 
     /** Hook called from InfraEquippedOutfitsMixin after the local outfit is saved. */
-    public void onLocalCosmeticChange(Map<String, String> equipped) {
+    public void onLocalCosmeticChange(SyncedCosmeticOutfit outfit) {
         if (!joined.get()) return;
         scheduler.submit(() -> {
             try {
-                pushCosmetics(equipped);
+                pushCosmetics(outfit);
             } catch (Exception e) {
                 System.err.println("[EssentialPatcher] http sync push failed: " + e.getMessage());
             }
@@ -179,6 +198,18 @@ public final class CosmeticHttpSync {
                 System.err.println("[EssentialPatcher] http sync trigger failed: " + e.getMessage());
             }
         });
+    }
+
+    private void pushCurrentOutfit() {
+        if (!joined.get()) return;
+        try {
+            SyncedCosmeticOutfit local = CosmeticSyncData.getLiveLocalOutfit();
+            if (!local.isEmpty()) {
+                pushCosmetics(local);
+            }
+        } catch (Exception e) {
+            System.err.println("[EssentialPatcher] http sync current outfit push failed: " + e.getMessage());
+        }
     }
 
     // ---------- internals ----------
@@ -315,18 +346,21 @@ public final class CosmeticHttpSync {
         try {
             UUID uuid = UUID.fromString(obj.get("uuid").getAsString());
             if (joiner != null && uuid.equals(joiner.uuid())) return;
-            JsonObject equipped = obj.has("equipped") && obj.get("equipped").isJsonObject()
-                    ? obj.getAsJsonObject("equipped")
-                    : new JsonObject();
-            Map<String, String> map = new HashMap<>();
-            for (String slot : equipped.keySet()) {
-                map.put(slot, equipped.get(slot).getAsString());
-            }
-            sessionPeers.put(uuid, map);
-            CosmeticSyncData.applyRemoteCosmetics(uuid, map);
+            SyncedCosmeticOutfit outfit = parseOutfit(obj);
+            sessionPeers.put(uuid, outfit);
+            CosmeticSyncData.applyRemoteOutfit(uuid, outfit);
         } catch (Exception e) {
             System.err.println("[EssentialPatcher] applyPeer failed: " + e.getMessage());
         }
+    }
+
+    public SyncedCosmeticOutfit getPeerCosmetics(UUID uuid) {
+        return sessionPeers.get(uuid);
+    }
+
+    public void fetchPeerAsync(UUID uuid) {
+        if (!joined.get()) return;
+        scheduler.submit(() -> fetchAndApply(uuid));
     }
 
     private void fetchAndApply(UUID uuid) {
@@ -359,26 +393,21 @@ public final class CosmeticHttpSync {
                     .build();
             HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() == 401) {
-                // JWT expired; re-auth and rejoin.
-                String prevSid = sessionId.get();
-                joined.set(false);
-                if (prevSid != null) onServerJoin(prevSid, "reauth");
+                String ki = lastKeyIngredient;
+                String lb = lastLabel;
+                if (ki != null) {
+                    closeSession(false);
+                    onServerJoin(ki, lb != null ? lb : "reauth");
+                }
             }
         } catch (Exception ignored) {
         }
     }
 
-    private void pushCosmetics(Map<String, String> equipped) throws Exception {
+    private void pushCosmetics(SyncedCosmeticOutfit outfit) throws Exception {
         String tk = token.get();
         if (tk == null) return;
-        StringBuilder body = new StringBuilder("{\"equipped\":{");
-        boolean first = true;
-        for (Map.Entry<String, String> e : equipped.entrySet()) {
-            if (!first) body.append(',');
-            first = false;
-            body.append('"').append(escape(e.getKey())).append("\":\"").append(escape(e.getValue())).append('"');
-        }
-        body.append("}}");
+        String body = GSON.toJson(Map.of("equipped", outfit.equipped(), "settings", outfit.settings()));
         HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/cosmetics"))
                 .header("Authorization", "Bearer " + tk)
                 .header("Content-Type", "application/json")
@@ -389,6 +418,35 @@ public final class CosmeticHttpSync {
         if (resp.statusCode() != 200) {
             throw new IOException("PUT /api/cosmetics: " + resp.statusCode() + " " + resp.body());
         }
+    }
+
+    private static SyncedCosmeticOutfit parseOutfit(JsonObject obj) {
+        Map<String, String> equipped = new HashMap<>();
+        JsonObject equippedJson = obj.has("equipped") && obj.get("equipped").isJsonObject()
+                ? obj.getAsJsonObject("equipped")
+                : new JsonObject();
+        for (String slot : equippedJson.keySet()) {
+            equipped.put(slot, equippedJson.get(slot).getAsString());
+        }
+
+        Map<String, List<String>> settings = new HashMap<>();
+        JsonObject settingsJson = obj.has("settings") && obj.get("settings").isJsonObject()
+                ? obj.getAsJsonObject("settings")
+                : new JsonObject();
+        for (String cosmeticId : settingsJson.keySet()) {
+            JsonElement value = settingsJson.get(cosmeticId);
+            if (!value.isJsonArray()) continue;
+            List<String> cosmeticSettings = new ArrayList<>();
+            JsonArray array = value.getAsJsonArray();
+            for (JsonElement setting : array) {
+                if (setting.isJsonPrimitive() && setting.getAsJsonPrimitive().isString()) {
+                    cosmeticSettings.add(setting.getAsString());
+                }
+            }
+            settings.put(cosmeticId, cosmeticSettings);
+        }
+
+        return new SyncedCosmeticOutfit(equipped, settings);
     }
 
     private void pushTrigger(String slot, String triggerName) throws Exception {

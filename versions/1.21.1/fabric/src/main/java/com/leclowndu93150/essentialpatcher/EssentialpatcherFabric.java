@@ -2,10 +2,12 @@ package com.leclowndu93150.essentialpatcher;
 
 import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
 import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
+import com.leclowndu93150.essentialpatcher.httpsync.EssentialSpsSyncListener;
 import com.leclowndu93150.essentialpatcher.httpsync.SessionKey;
 import com.leclowndu93150.essentialpatcher.network.CosmeticSyncData;
 import com.leclowndu93150.essentialpatcher.network.CosmeticSyncPayload;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -23,6 +25,16 @@ public class EssentialpatcherFabric implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        CompatibilityTracker.setPlatformVersionProvider(() -> {
+            try {
+                return FabricLoader.getInstance()
+                        .getModContainer("essential")
+                        .map(c -> c.getMetadata().getVersion().getFriendlyString())
+                        .orElse(null);
+            } catch (Exception e) {
+                return null;
+            }
+        });
         PatcherConfig config = PatcherConfig.get();
 
         PayloadTypeRegistry.playC2S().register(CosmeticSyncPayload.TYPE, CosmeticSyncPayload.CODEC);
@@ -80,6 +92,7 @@ public class EssentialpatcherFabric implements ClientModInitializer {
                 return Minecraft.getInstance().getUser().getProfileId();
             }
         });
+        EssentialSpsSyncListener.register();
 
         if (config.disableAutoUpdate) {
             disableEssentialAutoUpdate("1.21.1");

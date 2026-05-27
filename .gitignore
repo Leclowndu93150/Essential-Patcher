@@ -39,6 +39,13 @@ logs/
 crash-reports/
 saves/
 
+# Extracted third-party jars / loader leftovers
+/META-INF/
+/gg/
+/essential-loader.properties
+/essential-loader-stage2.properties
+*.class
+
 # Loader-specific caches
 .fabric/
 remappedSrc/

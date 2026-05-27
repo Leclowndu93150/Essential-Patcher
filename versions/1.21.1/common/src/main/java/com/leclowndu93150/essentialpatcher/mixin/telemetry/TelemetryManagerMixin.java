@@ -18,8 +18,15 @@ public class TelemetryManagerMixin {
         }
     }
 
-    @Inject(method = "sendHardwareAndOSTelemetry", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "sendHardwareTelemetry", at = @At("HEAD"), cancellable = true)
     private void onSendHardware(CallbackInfo ci) {
+        if (PatcherConfig.get().disableTelemetry) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "sendAutoUpdateTelemetry", at = @At("HEAD"), cancellable = true)
+    private void onSendAutoUpdate(CallbackInfo ci) {
         if (PatcherConfig.get().disableTelemetry) {
             ci.cancel();
         }

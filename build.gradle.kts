@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.leclowndu93150"
-version = "1.0.0"
+version = "1.0.2"
 
 prism {
     curseMaven()
@@ -15,11 +15,23 @@ prism {
         license = "MIT"
     }
 
+    publishing {
+        curseforge {
+            accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+            projectId = "1555663"
+        }
+
+        dependencies {
+            requires("essential-mod")
+        }
+    }
+
     version("1.21.1") {
         common {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
         }
         fabric {
             loaderVersion = "0.18.6"
