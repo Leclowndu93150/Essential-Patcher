@@ -23,6 +23,7 @@ prism {
 
         dependencies {
             requires("essential-mod")
+            requires("yacl")
         }
     }
 
@@ -49,6 +50,32 @@ prism {
                 localJar("libs/essential.jar")
                 implementation("curse.maven:yacl-667299:7437845")
                 runtimeOnly("curse.maven:essential-mod-546670:7806141")
+            }
+        }
+    }
+
+    version("1.20.1") {
+        common {
+            localJar("libs/essential-1.20.1.jar")
+            modCompileOnly("curse.maven:yacl-667299:6336646")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+        }
+        fabric {
+            loaderVersion = "0.16.14"
+            fabricApi("0.92.3+1.20.1")
+            dependencies {
+                localJar("libs/essential-1.20.1.jar")
+                modImplementation("curse.maven:yacl-667299:6336639")
+                modCompileOnly("curse.maven:modmenu-308702:5162837")
+            }
+        }
+        forge {
+            loaderVersion = "47.4.0"
+            dependencies {
+                localJar("libs/essential-1.20.1.jar")
+                modImplementation("curse.maven:yacl-667299:6336646")
+                runtimeOnly("curse.maven:essential-mod-546670:8113549")
             }
         }
     }

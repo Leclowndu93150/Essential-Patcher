@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "essentialpatcher"
+version = "${version}"
+displayName = "Essential Patcher"
+description = "Debloats and patches the Essential mod. Unlock all cosmetics client-side, disable telemetry, remove ads/sale banners, block checkout packets, and more. Fully configurable via YACL."
+
+[[dependencies.essentialpatcher]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.essentialpatcher]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.essentialpatcher]]
+modId = "yet_another_config_lib_v3"
+mandatory = true
+versionRange = "[3.1.0,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[mixins]]
+config = "essentialpatcher.mixins.json"

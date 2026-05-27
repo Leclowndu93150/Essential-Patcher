@@ -1,0 +1,38 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.leclowndu93150.essentialpatcher.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "essentialpatcher.refmap.json",
+  "mixins": [
+    "cosmetics.CosmeticsManagerMixin",
+    "cosmetics.PricingInfoMixin",
+    "cosmetics.InfraEquippedOutfitsMixin",
+    "cosmetics.EmoteWheelMixin",
+    "cosmetics.OutfitUpdatesPayloadMixin",
+    "telemetry.TelemetryManagerMixin",
+    "telemetry.ImpressionTelemetryMixin",
+    "telemetry.FPSTelemetryMixin",
+    "telemetry.FeatureSessionTelemetryMixin",
+    "notices.NoticesManagerMixin",
+    "notices.PersistentToastMixin",
+    "notices.SaleNoticeManagerMixin",
+    "notices.NoticeBannerManagerMixin",
+    "notices.CosmeticNoticesMixin",
+    "network.CoinsManagerMixin",
+    "network.ConnectionManagerMixin",
+    "gui.PurchaseFlowMixin",
+    "gui.WardrobeMixin",
+    "gui.CoinsPurchaseModalMixin",
+    "gui.OnboardingMixin",
+    "gui.WikiToastMixin",
+    "gui.RulesManagerMixin",
+    "gui.ChatManagerMixin",
+    "gui.TitleScreenMixin"
+  ],
+  "client": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

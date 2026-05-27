@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "essentialpatcher",
+  "version": "${version}",
+  "name": "Essential Patcher",
+  "description": "Debloats and patches the Essential mod.",
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.leclowndu93150.essentialpatcher.EssentialpatcherFabric"
+    ]
+  },
+  "mixins": [
+    "essentialpatcher.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": ">=1.20.1",
+    "java": ">=17"
+  },
+  "suggests": {
+    "yet_another_config_lib_v3": ">=3.1.0"
+  }
+}
