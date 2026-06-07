@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "essentialpatcher",
+  "version": "${version}",
+  "name": "Essential Patcher",
+  "description": "Debloats and patches the Essential mod.",
+  "license": "MIT",
+  "icon": "icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "preLaunch": [
+      "com.leclowndu93150.essentialpatcher.EssentialpatcherPreLaunch"
+    ],
+    "client": [
+      "com.leclowndu93150.essentialpatcher.EssentialpatcherFabric"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": ">=1.21.9 <=1.21.10",
+    "java": ">=21",
+    "yet_another_config_lib_v3": "*"
+  }
+}

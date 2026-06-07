@@ -32,28 +32,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * HTTP-side cosmetic sync against cosmetics.leclowndu93150.dev. Independent of the
- * in-game packet sync (which only works when both peers run the patcher and the MC
- * server forwards packets). This one works on any vanilla server because it goes
- * through our own HTTPS service.
- *
- * Per-version code creates a single instance and calls:
- *   - {@link #setMojangJoiner(MojangJoiner)}   wires the version-specific Mojang call
- *   - {@link #onServerJoin(String, String)}    when entering a server/LAN/SP world
- *   - {@link #onServerLeave()}                 when leaving
- *   - {@link #onLocalCosmeticChange(Map)}      when the local outfit changes
- */
 public final class CosmeticHttpSync {
 
-    public interface MojangJoiner {
-        /** Calls Minecraft.getInstance().getMinecraftSessionService().joinServer(...). */
-        void joinServer(String serverId) throws Exception;
+    public interface AccessTokenProvider {
+        String accessToken();
 
-        /** The player's username from Minecraft.getInstance().getUser().getName(). */
         String username();
 
-        /** The player's UUID from Minecraft.getInstance().getUser().getProfileId(). */
         UUID uuid();
     }
 
@@ -73,11 +58,14 @@ public final class CosmeticHttpSync {
         return t;
     });
 
-    private volatile MojangJoiner joiner;
+    private volatile AccessTokenProvider tokenProvider;
     private final AtomicReference<String> token = new AtomicReference<>();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicBoolean joined = new AtomicBoolean();
     private final AtomicBoolean closing = new AtomicBoolean();
+    private final AtomicBoolean authenticating = new AtomicBoolean();
+    private volatile long lastAuthAttemptMs;
+    private static final long AUTH_COOLDOWN_MS = 60_000L;
     private ScheduledFuture<?> heartbeatTask;
     private Thread sseThread;
 
@@ -85,8 +73,8 @@ public final class CosmeticHttpSync {
     private volatile String lastLabel;
     private final ConcurrentHashMap<UUID, SyncedCosmeticOutfit> sessionPeers = new ConcurrentHashMap<>();
 
-    public void setMojangJoiner(MojangJoiner j) {
-        this.joiner = j;
+    public void setAccessTokenProvider(AccessTokenProvider p) {
+        this.tokenProvider = p;
     }
 
     public boolean isEnabled() {
@@ -107,7 +95,7 @@ public final class CosmeticHttpSync {
      * easier debugging (not security-relevant).
      */
     public void onServerJoin(String keyIngredient, String label) {
-        if (!isEnabled() || joiner == null) return;
+        if (!isEnabled() || tokenProvider == null) return;
         if (joined.get()) {
             closeSession(false);
         }
@@ -117,7 +105,7 @@ public final class CosmeticHttpSync {
         String sid = computeSessionId(keyIngredient, label);
         scheduler.submit(() -> {
             try {
-                authenticate();
+                ensureAuthenticated();
                 joinSession(sid);
                 openSseStream();
                 heartbeatTask = scheduler.scheduleAtFixedRate(this::heartbeat, 30, 30, TimeUnit.SECONDS);
@@ -151,13 +139,8 @@ public final class CosmeticHttpSync {
         sessionPeers.clear();
         String tk = token.get();
         String sid = sessionId.get();
-        if (!notifyServer) {
-            token.compareAndSet(tk, null);
-            sessionId.compareAndSet(sid, null);
-            return;
-        }
-        if (tk == null) {
-            sessionId.compareAndSet(sid, null);
+        sessionId.compareAndSet(sid, null);
+        if (!notifyServer || tk == null) {
             return;
         }
         scheduler.submit(() -> {
@@ -170,8 +153,6 @@ public final class CosmeticHttpSync {
                 http.send(req, HttpResponse.BodyHandlers.discarding());
             } catch (Exception ignored) {
             }
-            token.compareAndSet(tk, null);
-            sessionId.compareAndSet(sid, null);
         });
     }
 
@@ -214,37 +195,47 @@ public final class CosmeticHttpSync {
 
     // ---------- internals ----------
 
-    private void authenticate() throws Exception {
-        if (joiner == null) throw new IllegalStateException("MojangJoiner not set");
-        String username = joiner.username();
-        if (username == null) throw new IllegalStateException("no username");
+    private void ensureAuthenticated() throws Exception {
+        if (token.get() != null) return;
+        if (tokenProvider == null) throw new IllegalStateException("AccessTokenProvider not set");
 
-        HttpRequest begin = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/auth/begin"))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.ofString("{\"username\":\"" + escape(username) + "\"}"))
-                .build();
-        HttpResponse<String> beginResp = http.send(begin, HttpResponse.BodyHandlers.ofString());
-        if (beginResp.statusCode() != 200) {
-            throw new IOException("auth/begin: " + beginResp.statusCode() + " " + beginResp.body());
+        if (!authenticating.compareAndSet(false, true)) {
+            long deadline = System.currentTimeMillis() + 15_000L;
+            while (authenticating.get() && System.currentTimeMillis() < deadline) {
+                Thread.sleep(100);
+            }
+            if (token.get() != null) return;
+            if (!authenticating.compareAndSet(false, true)) {
+                throw new IOException("auth busy");
+            }
         }
-        JsonObject beginJson = GSON.fromJson(beginResp.body(), JsonObject.class);
-        String serverId = beginJson.get("server_id").getAsString();
+        try {
+            long now = System.currentTimeMillis();
+            if (now - lastAuthAttemptMs < AUTH_COOLDOWN_MS && token.get() == null) {
+                throw new IOException("auth cooldown");
+            }
+            lastAuthAttemptMs = now;
 
-        joiner.joinServer(serverId);
+            String accessToken = tokenProvider.accessToken();
+            if (accessToken == null || accessToken.isEmpty()) {
+                throw new IllegalStateException("no access token");
+            }
 
-        String body = "{\"server_id\":\"" + escape(serverId) + "\",\"username\":\"" + escape(username) + "\"}";
-        HttpRequest finish = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/auth/finish"))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-        HttpResponse<String> finishResp = http.send(finish, HttpResponse.BodyHandlers.ofString());
-        if (finishResp.statusCode() != 200) {
-            throw new IOException("auth/finish: " + finishResp.statusCode() + " " + finishResp.body());
+            String body = "{\"access_token\":\"" + escape(accessToken) + "\"}";
+            HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+            HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() != 200) {
+                throw new IOException("auth/login: " + resp.statusCode() + " " + resp.body());
+            }
+            JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
+            token.set(json.get("token").getAsString());
+        } finally {
+            authenticating.set(false);
         }
-        JsonObject finishJson = GSON.fromJson(finishResp.body(), JsonObject.class);
-        token.set(finishJson.get("token").getAsString());
     }
 
     private void joinSession(String sid) throws Exception {
@@ -330,7 +321,7 @@ public final class CosmeticHttpSync {
     private void applyTrigger(JsonObject obj) {
         try {
             UUID uuid = UUID.fromString(obj.get("uuid").getAsString());
-            if (joiner != null && uuid.equals(joiner.uuid())) return;
+            if (tokenProvider != null && uuid.equals(tokenProvider.uuid())) return;
             String slot = obj.has("slot") ? obj.get("slot").getAsString() : null;
             String triggerName = obj.has("trigger") ? obj.get("trigger").getAsString() : null;
             if (slot == null || triggerName == null) return;
@@ -345,7 +336,7 @@ public final class CosmeticHttpSync {
     private void applyPeer(JsonObject obj) {
         try {
             UUID uuid = UUID.fromString(obj.get("uuid").getAsString());
-            if (joiner != null && uuid.equals(joiner.uuid())) return;
+            if (tokenProvider != null && uuid.equals(tokenProvider.uuid())) return;
             SyncedCosmeticOutfit outfit = parseOutfit(obj);
             sessionPeers.put(uuid, outfit);
             CosmeticSyncData.applyRemoteOutfit(uuid, outfit);
@@ -393,6 +384,7 @@ public final class CosmeticHttpSync {
                     .build();
             HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() == 401) {
+                token.set(null);
                 String ki = lastKeyIngredient;
                 String lb = lastLabel;
                 if (ki != null) {

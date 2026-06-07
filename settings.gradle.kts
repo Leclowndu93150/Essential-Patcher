@@ -18,12 +18,21 @@ plugins {
 rootProject.name = "Essential Patcher"
 
 prism {
+    version("1.20.1") {
+        common()
+        fabric()
+        forge()
+    }
     version("1.21.1") {
         common()
         fabric()
         neoforge()
     }
-    version("26.1.2") {
+    version("1.21.2") {
+        common()
+        fabric()
+    }
+    version("1.21.9") {
         common()
         fabric()
     }
@@ -31,9 +40,8 @@ prism {
         common()
         fabric()
     }
-    version("1.20.1") {
+    version("26.1.2") {
         common()
         fabric()
-        forge()
     }
 }

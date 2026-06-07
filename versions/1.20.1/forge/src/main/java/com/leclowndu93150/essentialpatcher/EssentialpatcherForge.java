@@ -40,11 +40,10 @@ public class EssentialpatcherForge {
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerJoin);
         MinecraftForge.EVENT_BUS.addListener(this::onPlayerLeave);
 
-        CosmeticHttpSync.get().setMojangJoiner(new CosmeticHttpSync.MojangJoiner() {
+        CosmeticHttpSync.get().setAccessTokenProvider(new CosmeticHttpSync.AccessTokenProvider() {
             @Override
-            public void joinServer(String serverId) throws Exception {
-                Minecraft mc = Minecraft.getInstance();
-                mc.getMinecraftSessionService().joinServer(mc.getUser().getGameProfile(), mc.getUser().getAccessToken(), serverId);
+            public String accessToken() {
+                return Minecraft.getInstance().getUser().getAccessToken();
             }
 
             @Override

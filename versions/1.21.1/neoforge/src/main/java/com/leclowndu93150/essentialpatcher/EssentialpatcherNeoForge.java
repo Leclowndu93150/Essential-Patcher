@@ -40,11 +40,10 @@ public class EssentialpatcherNeoForge {
         NeoForge.EVENT_BUS.addListener(this::onPlayerJoin);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> CosmeticHttpSync.get().onServerLeave());
 
-        CosmeticHttpSync.get().setMojangJoiner(new CosmeticHttpSync.MojangJoiner() {
+        CosmeticHttpSync.get().setAccessTokenProvider(new CosmeticHttpSync.AccessTokenProvider() {
             @Override
-            public void joinServer(String serverId) throws Exception {
-                Minecraft mc = Minecraft.getInstance();
-                mc.getMinecraftSessionService().joinServer(mc.getUser().getProfileId(), mc.getUser().getAccessToken(), serverId);
+            public String accessToken() {
+                return Minecraft.getInstance().getUser().getAccessToken();
             }
 
             @Override

@@ -43,11 +43,10 @@ public class EssentialpatcherFabric implements ClientModInitializer {
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> CosmeticHttpSync.get().onServerLeave());
 
-        CosmeticHttpSync.get().setMojangJoiner(new CosmeticHttpSync.MojangJoiner() {
+        CosmeticHttpSync.get().setAccessTokenProvider(new CosmeticHttpSync.AccessTokenProvider() {
             @Override
-            public void joinServer(String serverId) throws Exception {
-                Minecraft mc = Minecraft.getInstance();
-                mc.getMinecraftSessionService().joinServer(mc.getUser().getGameProfile(), mc.getUser().getAccessToken(), serverId);
+            public String accessToken() {
+                return Minecraft.getInstance().getUser().getAccessToken();
             }
 
             @Override

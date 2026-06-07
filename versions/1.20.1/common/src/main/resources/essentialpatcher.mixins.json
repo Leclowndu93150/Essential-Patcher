@@ -6,10 +6,13 @@
   "refmap": "essentialpatcher.refmap.json",
   "mixins": [
     "cosmetics.CosmeticsManagerMixin",
+    "cosmetics.CosmeticsRenderStateLiveMixin",
     "cosmetics.PricingInfoMixin",
     "cosmetics.InfraEquippedOutfitsMixin",
     "cosmetics.EmoteWheelMixin",
     "cosmetics.OutfitUpdatesPayloadMixin",
+    "render.HumanoidArmorLayerAccessor",
+    "render.HumanoidArmorLayerMixin",
     "telemetry.TelemetryManagerMixin",
     "telemetry.ImpressionTelemetryMixin",
     "telemetry.FPSTelemetryMixin",
