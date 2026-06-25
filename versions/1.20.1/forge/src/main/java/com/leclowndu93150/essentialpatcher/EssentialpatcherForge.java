@@ -9,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 
@@ -24,16 +23,6 @@ import java.util.UUID;
 public class EssentialpatcherForge {
 
     public EssentialpatcherForge() {
-        CompatibilityTracker.setPlatformVersionProvider(() -> {
-            try {
-                return ModList.get()
-                        .getModContainerById("essential")
-                        .map(c -> c.getModInfo().getVersion().toString())
-                        .orElse(null);
-            } catch (Exception e) {
-                return null;
-            }
-        });
         PatcherConfig config = PatcherConfig.get();
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> PatcherConfigScreen.create(parent)));

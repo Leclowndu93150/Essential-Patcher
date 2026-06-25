@@ -30,8 +30,7 @@
     "gui.OnboardingMixin",
     "gui.WikiToastMixin",
     "gui.RulesManagerMixin",
-    "gui.ChatManagerMixin",
-    "gui.TitleScreenMixin"
+    "gui.ChatManagerMixin"
   ],
   "client": [],
   "server": [],

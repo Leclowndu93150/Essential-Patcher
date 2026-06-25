@@ -6,7 +6,6 @@ import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
 import com.leclowndu93150.essentialpatcher.httpsync.EssentialSpsSyncListener;
 import com.leclowndu93150.essentialpatcher.httpsync.SessionKey;
 import net.minecraft.client.Minecraft;
-import net.neoforged.fml.ModList;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
@@ -24,16 +23,6 @@ import java.util.UUID;
 public class EssentialpatcherNeoForge {
 
     public EssentialpatcherNeoForge(IEventBus modBus) {
-        CompatibilityTracker.setPlatformVersionProvider(() -> {
-            try {
-                return ModList.get()
-                        .getModContainerById("essential")
-                        .map(c -> c.getModInfo().getVersion().toString())
-                        .orElse(null);
-            } catch (Exception e) {
-                return null;
-            }
-        });
         PatcherConfig config = PatcherConfig.get();
         ModLoadingContext.get().registerExtensionPoint(IConfigScreenFactory.class,
                 () -> (container, parent) -> PatcherConfigScreen.create(parent));

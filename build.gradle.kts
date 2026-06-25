@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.leclowndu93150"
-version = "1.0.4"
+version = "1.0.5"
 
 prism {
     curseMaven()
@@ -16,9 +16,16 @@ prism {
     }
 
     publishing {
+
+        changelog = "update to newer essential versions"
         curseforge {
             accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
             projectId = "1555663"
+        }
+
+        modrinth {
+            accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+            projectId = "1aEzsYFA"
         }
 
         dependencies {
@@ -121,6 +128,7 @@ prism {
     }
 
     version("26.1.2") {
+        minecraftVersions("26.1.2", "26.2")
         common {
             localJar("libs/essential-26.1.2.jar")
             modCompileOnly("curse.maven:yacl-667299:7904436")

@@ -5,7 +5,6 @@ import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
 import com.leclowndu93150.essentialpatcher.httpsync.EssentialSpsSyncListener;
 import com.leclowndu93150.essentialpatcher.httpsync.SessionKey;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
 
@@ -20,16 +19,6 @@ public class EssentialpatcherFabric implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        CompatibilityTracker.setPlatformVersionProvider(() -> {
-            try {
-                return FabricLoader.getInstance()
-                        .getModContainer("essential")
-                        .map(c -> c.getMetadata().getVersion().getFriendlyString())
-                        .orElse(null);
-            } catch (Exception e) {
-                return null;
-            }
-        });
         PatcherConfig config = PatcherConfig.get();
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {

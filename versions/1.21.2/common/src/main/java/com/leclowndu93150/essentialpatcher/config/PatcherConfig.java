@@ -37,7 +37,7 @@ public class PatcherConfig {
     public boolean disableWikiToast = true;
     public boolean skipCommunityRules = true;
     public boolean hideAnnouncementChannel = true;
-    public boolean disableAutoUpdate = true;
+    public boolean disableAutoUpdate = false;
 
     public boolean httpCosmeticSync = true;
     public String httpCosmeticSyncBaseUrl = "https://cosmetics.leclowndu93150.dev";
