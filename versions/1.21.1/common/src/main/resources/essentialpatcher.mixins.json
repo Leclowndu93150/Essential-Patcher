@@ -6,6 +6,8 @@
   "mixins": [
     "cosmetics.CosmeticsManagerMixin",
     "cosmetics.CosmeticsRenderStateLiveMixin",
+    "cosmetics.EssentialModelRendererCompanionMixin",
+    "cosmetics.ParticleSystemMixin",
     "cosmetics.PricingInfoMixin",
     "cosmetics.InfraEquippedOutfitsMixin",
     "cosmetics.EmoteWheelMixin",

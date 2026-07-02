@@ -16,6 +16,8 @@ public class PatcherConfig {
     public boolean unlockAllCosmetics = true;
     public boolean showAllFree = true;
     public boolean disableNewCosmeticDots = true;
+    public boolean hideCosmeticsInInventoryWithShaders = true;
+    public boolean fixShaderGlintCorruption = true;
 
     public boolean disableTelemetry = true;
     public boolean disableFPSTelemetry = true;

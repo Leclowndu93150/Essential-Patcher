@@ -30,6 +30,12 @@ public class PatcherConfigScreen {
                         .option(toggle("Disable New Cosmetic Dots",
                                 "Removes the \"new\" indicator dots on recently added cosmetics (FOMO bait).",
                                 defaults.disableNewCosmeticDots, () -> config.disableNewCosmeticDots, v -> config.disableNewCosmeticDots = v))
+                        .option(toggle("Hide Cosmetics in Inventory with Shaders",
+                                "Hides cosmetics on the inventory paperdoll while a shader pack is active. Works around an Iris/Oculus bug that breaks enchanted item textures (purple/black glint) when cosmetics render in the inventory.",
+                                defaults.hideCosmeticsInInventoryWithShaders, () -> config.hideCosmeticsInInventoryWithShaders, v -> config.hideCosmeticsInInventoryWithShaders = v))
+                        .option(toggle("Fix Shader Glint Corruption",
+                                "Isolates Iris/Oculus's captured entity/item render state around cosmetic particle rendering. Fixes enchanted items showing as purple/black in the GUI when shaders are active (Iris #2427).",
+                                defaults.fixShaderGlintCorruption, () -> config.fixShaderGlintCorruption, v -> config.fixShaderGlintCorruption = v))
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Telemetry"))

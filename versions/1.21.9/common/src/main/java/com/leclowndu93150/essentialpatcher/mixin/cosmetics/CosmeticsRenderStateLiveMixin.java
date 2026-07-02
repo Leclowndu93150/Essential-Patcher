@@ -1,5 +1,7 @@
 package com.leclowndu93150.essentialpatcher.mixin.cosmetics;
 
+import com.leclowndu93150.essentialpatcher.compat.ShaderCompat;
+import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
 import gg.essential.api.cosmetics.RenderCosmetic;
 import gg.essential.config.EssentialConfig;
 import gg.essential.cosmetics.ArmorSlots;
@@ -92,8 +94,9 @@ public abstract class CosmeticsRenderStateLiveMixin {
 
     @Unique
     private boolean essentialPatcher$inventoryCosmeticsHidden() {
-        return GuiInventoryExt.isInventoryEntityRendering.getUntracked()
-                && EssentialConfig.INSTANCE.getDisableCosmeticsInInventory();
+        if (!GuiInventoryExt.isInventoryEntityRendering.getUntracked()) return false;
+        if (EssentialConfig.INSTANCE.getDisableCosmeticsInInventory()) return true;
+        return PatcherConfig.get().hideCosmeticsInInventoryWithShaders && ShaderCompat.isShaderPackActive();
     }
 
     @Unique
