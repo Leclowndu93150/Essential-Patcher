@@ -15,7 +15,6 @@
     "cosmetics.OutfitUpdatesPayloadMixin",
     "render.HumanoidArmorLayerAccessor",
     "render.HumanoidArmorLayerMixin",
-    "render.ParticleEngineMixin",
     "telemetry.TelemetryManagerMixin",
     "telemetry.ImpressionTelemetryMixin",
     "telemetry.FPSTelemetryMixin",

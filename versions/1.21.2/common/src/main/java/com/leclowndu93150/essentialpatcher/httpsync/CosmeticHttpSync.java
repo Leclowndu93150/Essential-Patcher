@@ -216,12 +216,13 @@ public final class CosmeticHttpSync {
             }
             lastAuthAttemptMs = now;
 
-            String accessToken = tokenProvider.accessToken();
-            if (accessToken == null || accessToken.isEmpty()) {
-                throw new IllegalStateException("no access token");
+            UUID uuid = tokenProvider.uuid();
+            String username = tokenProvider.username();
+            if (uuid == null || username == null || username.isEmpty()) {
+                throw new IllegalStateException("no local profile");
             }
 
-            String body = "{\"access_token\":\"" + escape(accessToken) + "\"}";
+            String body = "{\"uuid\":\"" + escape(uuid.toString()) + "\",\"username\":\"" + escape(username) + "\"}";
             HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/auth/login"))
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofSeconds(10))
