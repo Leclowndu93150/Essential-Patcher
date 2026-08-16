@@ -90,13 +90,17 @@ The sync server runs on an OVH VPS located in France (EU). All data is subject t
 |-----------|---------|
 | 26.1.2 | Fabric |
 | 1.21.11 | Fabric |
+| 1.21.9 | Fabric |
+| 1.21.2 | Fabric |
 | 1.21.1 | NeoForge, Fabric |
 | 1.20.1 | Forge, Fabric |
+| 1.19.2 | Forge, Fabric |
 
 ## Requirements
 
-- Essential 1.3.10.8 or 1.3.10.9
-- YACL (Yet Another Config Lib)
+- Essential 1.4.1.1
+- YACL (Yet Another Config Lib) — not required on 1.19.2, which has no YACL build; there the config
+  button opens `config/essentialpatcher.json` instead of a settings screen.
 
 ## Building
 

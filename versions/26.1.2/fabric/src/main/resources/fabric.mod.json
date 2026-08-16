@@ -13,6 +13,9 @@
     ],
     "client": [
       "com.leclowndu93150.essentialpatcher.EssentialpatcherFabric"
+    ],
+    "modmenu": [
+      "com.leclowndu93150.essentialpatcher.EssentialpatcherModMenu"
     ]
   },
   "depends": {

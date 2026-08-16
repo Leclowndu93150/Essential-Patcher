@@ -94,7 +94,7 @@ public class PatcherConfigScreen {
                                 "Removes the \"Visit the Essential Wiki\" toast notification.",
                                 defaults.disableWikiToast, () -> config.disableWikiToast, v -> config.disableWikiToast = v))
                         .option(toggle("Skip Community Rules",
-                                "Skips the community chat rules agreement popup.",
+                                "Agrees to the community chat rules automatically instead of showing the popup.",
                                 defaults.skipCommunityRules, () -> config.skipCommunityRules, v -> config.skipCommunityRules = v))
                         .option(toggle("Hide Announcement Channel",
                                 "Hides the Essential announcement channel from the social tab.",

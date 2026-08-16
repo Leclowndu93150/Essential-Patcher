@@ -18,6 +18,11 @@ plugins {
 rootProject.name = "Essential Patcher"
 
 prism {
+    version("1.19.2") {
+        common()
+        fabric()
+        forge()
+    }
     version("1.20.1") {
         common()
         fabric()

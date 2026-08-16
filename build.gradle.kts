@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.leclowndu93150"
-version = "1.0.7"
+version = "1.0.8"
 
 prism {
     curseMaven()
@@ -17,7 +17,7 @@ prism {
 
     publishing {
 
-        changelog = "fixed issue where enchantment glint with shaders was broken"
+        changelog = "added Mod Menu integration on Fabric, added 1.19.2, fixed Skip Community Rules breaking friend requests, fixed the Modrinth install 404, cosmetic sync now reconnects on its own, updated to Essential 1.4.1.1"
         curseforge {
             accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
             projectId = "1555663"
@@ -29,12 +29,19 @@ prism {
         }
 
         dependencies {
-            requires("essential-mod")
-            requires("yacl")
+            curseforge {
+                requires("essential-mod")
+            }
+            modrinth {
+                requires("essential")
+            }
         }
     }
 
     version("1.21.1") {
+        publishingDependencies {
+            requires("yacl")
+        }
         common {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
@@ -65,6 +72,9 @@ prism {
     }
 
     version("1.21.2") {
+        publishingDependencies {
+            requires("yacl")
+        }
         common {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
@@ -86,6 +96,9 @@ prism {
     }
 
     version("1.21.9") {
+        publishingDependencies {
+            requires("yacl")
+        }
         common {
             localJar("libs/essential-1.21.11.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
@@ -107,6 +120,9 @@ prism {
     }
 
     version("1.21.11") {
+        publishingDependencies {
+            requires("yacl")
+        }
         common {
             localJar("libs/essential-1.21.11.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
@@ -129,6 +145,9 @@ prism {
 
     version("26.1.2") {
         minecraftVersions("26.1.2", "26.2")
+        publishingDependencies {
+            requires("yacl")
+        }
         common {
             localJar("libs/essential-26.1.2.jar")
             modCompileOnly("curse.maven:yacl-667299:7904436")
@@ -149,7 +168,35 @@ prism {
         }
     }
 
+    version("1.19.2") {
+        common {
+            localJar("libs/essential-1.19.2.jar")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+        }
+        fabric {
+            loaderVersion = "0.16.14"
+            fabricApi("0.77.0+1.19.2")
+            mixins {
+                disableAutoDetect()
+            }
+            dependencies {
+                localJar("libs/essential-1.19.2.jar")
+                modCompileOnly("curse.maven:modmenu-308702:4145207")
+            }
+        }
+        forge {
+            loaderVersion = "43.5.0"
+            dependencies {
+                localJar("libs/essential-1.19.2.jar")
+            }
+        }
+    }
+
     version("1.20.1") {
+        publishingDependencies {
+            requires("yacl")
+        }
         common {
             localJar("libs/essential-1.20.1.jar")
             modCompileOnly("curse.maven:yacl-667299:6336646")

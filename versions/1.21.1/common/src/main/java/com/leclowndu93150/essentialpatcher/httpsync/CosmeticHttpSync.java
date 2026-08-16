@@ -11,6 +11,7 @@ import gg.essential.mod.cosmetics.CosmeticSlot;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -30,6 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class CosmeticHttpSync {
@@ -44,6 +46,9 @@ public final class CosmeticHttpSync {
 
     private static final Gson GSON = new Gson();
     private static final CosmeticHttpSync INSTANCE = new CosmeticHttpSync();
+
+    private static final long[] RETRY_BACKOFF_MS = {2_000L, 5_000L, 15_000L, 30_000L, 60_000L};
+    private static final int MAX_HEARTBEAT_FAILURES = 3;
 
     public static CosmeticHttpSync get() {
         return INSTANCE;
@@ -64,10 +69,10 @@ public final class CosmeticHttpSync {
     private final AtomicBoolean joined = new AtomicBoolean();
     private final AtomicBoolean closing = new AtomicBoolean();
     private final AtomicBoolean authenticating = new AtomicBoolean();
-    private volatile long lastAuthAttemptMs;
-    private static final long AUTH_COOLDOWN_MS = 60_000L;
-    private ScheduledFuture<?> heartbeatTask;
-    private Thread sseThread;
+    private final AtomicInteger sessionGeneration = new AtomicInteger();
+    private final AtomicInteger heartbeatFailures = new AtomicInteger();
+    private volatile ScheduledFuture<?> heartbeatTask;
+    private volatile Thread sessionThread;
 
     private volatile String lastKeyIngredient;
     private volatile String lastLabel;
@@ -88,37 +93,22 @@ public final class CosmeticHttpSync {
         return url;
     }
 
-    /**
-     * Called when the player joins a server/LAN/SP. {@code keyIngredient} is mixed into
-     * the session_id hash so different servers/worlds get different broadcast groups.
-     * {@code label} is a short tag like "smp", "lan", "sp" appended to the hash for
-     * easier debugging (not security-relevant).
-     */
     public void onServerJoin(String keyIngredient, String label) {
         if (!isEnabled() || tokenProvider == null) return;
-        if (joined.get()) {
-            closeSession(false);
-        }
+        closeSession(false);
         closing.set(false);
         lastKeyIngredient = keyIngredient;
         lastLabel = label;
-        String sid = computeSessionId(keyIngredient, label);
-        scheduler.submit(() -> {
-            try {
-                ensureAuthenticated();
-                joinSession(sid);
-                openSseStream();
-                heartbeatTask = scheduler.scheduleAtFixedRate(this::heartbeat, 30, 30, TimeUnit.SECONDS);
-                joined.set(true);
 
-                pushCurrentOutfit();
-                scheduler.schedule(this::pushCurrentOutfit, 2, TimeUnit.SECONDS);
-                scheduler.schedule(this::pushCurrentOutfit, 8, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                System.err.println("[EssentialPatcher] http sync join failed: " + e.getMessage());
-                joined.set(false);
-            }
-        });
+        int generation = sessionGeneration.incrementAndGet();
+        String sid = computeSessionId(keyIngredient, label);
+        heartbeatFailures.set(0);
+        heartbeatTask = scheduler.scheduleAtFixedRate(this::heartbeat, 30, 30, TimeUnit.SECONDS);
+
+        Thread thread = new Thread(() -> runSession(generation, sid), "EssentialPatcher-Session");
+        thread.setDaemon(true);
+        sessionThread = thread;
+        thread.start();
     }
 
     public void onServerLeave() {
@@ -126,21 +116,25 @@ public final class CosmeticHttpSync {
     }
 
     private void closeSession(boolean notifyServer) {
-        if (!joined.getAndSet(false)) return;
+        sessionGeneration.incrementAndGet();
+        boolean wasJoined = joined.getAndSet(false);
         closing.set(true);
-        if (heartbeatTask != null) {
-            heartbeatTask.cancel(false);
+
+        ScheduledFuture<?> task = heartbeatTask;
+        if (task != null) {
+            task.cancel(false);
             heartbeatTask = null;
         }
-        if (sseThread != null) {
-            sseThread.interrupt();
-            sseThread = null;
+        Thread thread = sessionThread;
+        if (thread != null && thread != Thread.currentThread()) {
+            thread.interrupt();
         }
+        sessionThread = null;
         sessionPeers.clear();
+
         String tk = token.get();
-        String sid = sessionId.get();
-        sessionId.compareAndSet(sid, null);
-        if (!notifyServer || tk == null) {
+        sessionId.set(null);
+        if (!notifyServer || !wasJoined || tk == null) {
             return;
         }
         scheduler.submit(() -> {
@@ -156,7 +150,6 @@ public final class CosmeticHttpSync {
         });
     }
 
-    /** Hook called from InfraEquippedOutfitsMixin after the local outfit is saved. */
     public void onLocalCosmeticChange(SyncedCosmeticOutfit outfit) {
         if (!joined.get()) return;
         scheduler.submit(() -> {
@@ -168,7 +161,6 @@ public final class CosmeticHttpSync {
         });
     }
 
-    /** Hook called from EmoteWheelMixin when the user clicks an emote in the wheel. */
     public void onLocalEmoteTrigger(String slot, String emoteId) {
         if (!joined.get()) return;
         if (slot == null || emoteId == null) return;
@@ -193,7 +185,88 @@ public final class CosmeticHttpSync {
         }
     }
 
-    // ---------- internals ----------
+    private void runSession(int generation, String sid) {
+        int attempt = 0;
+        while (!closing.get() && generation == sessionGeneration.get()) {
+            boolean streamed = false;
+            try {
+                ensureAuthenticated();
+                joinSession(sid);
+                if (closing.get() || generation != sessionGeneration.get()) return;
+
+                joined.set(true);
+                heartbeatFailures.set(0);
+                attempt = 0;
+
+                pushCurrentOutfit();
+                scheduler.schedule(this::pushCurrentOutfit, 2, TimeUnit.SECONDS);
+                scheduler.schedule(this::pushCurrentOutfit, 8, TimeUnit.SECONDS);
+
+                streamed = runSseStream();
+            } catch (Exception e) {
+                if (!closing.get() && generation == sessionGeneration.get()) {
+                    System.err.println("[EssentialPatcher] http sync session failed: " + e.getMessage());
+                }
+            }
+            joined.set(false);
+            if (closing.get() || generation != sessionGeneration.get()) return;
+
+            attempt = streamed ? 0 : attempt + 1;
+            if (!sleepQuietly(backoffMs(attempt))) return;
+        }
+    }
+
+    private boolean runSseStream() {
+        String tk = token.get();
+        if (tk == null) return false;
+        try {
+            HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/stream"))
+                    .header("Authorization", "Bearer " + tk)
+                    .header("Accept", "text/event-stream")
+                    .GET()
+                    .build();
+            HttpResponse<InputStream> resp = http.send(req, HttpResponse.BodyHandlers.ofInputStream());
+            if (resp.statusCode() == 401) {
+                token.set(null);
+                return false;
+            }
+            if (resp.statusCode() != 200) {
+                System.err.println("[EssentialPatcher] SSE stream rejected: " + resp.statusCode());
+                return false;
+            }
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(resp.body(), StandardCharsets.UTF_8))) {
+                String line;
+                while (!closing.get() && (line = r.readLine()) != null) {
+                    if (line.startsWith("data: ")) {
+                        try {
+                            handleEvent(GSON.fromJson(line.substring(6), JsonObject.class));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            if (!closing.get()) {
+                System.err.println("[EssentialPatcher] SSE stream ended: " + e.getMessage());
+            }
+            return false;
+        }
+    }
+
+    private static long backoffMs(int attempt) {
+        return RETRY_BACKOFF_MS[Math.min(Math.max(attempt, 0), RETRY_BACKOFF_MS.length - 1)];
+    }
+
+    private static boolean sleepQuietly(long millis) {
+        try {
+            Thread.sleep(millis);
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
 
     private void ensureAuthenticated() throws Exception {
         if (token.get() != null) return;
@@ -210,12 +283,6 @@ public final class CosmeticHttpSync {
             }
         }
         try {
-            long now = System.currentTimeMillis();
-            if (now - lastAuthAttemptMs < AUTH_COOLDOWN_MS && token.get() == null) {
-                throw new IOException("auth cooldown");
-            }
-            lastAuthAttemptMs = now;
-
             UUID uuid = tokenProvider.uuid();
             String username = tokenProvider.username();
             if (uuid == null || username == null || username.isEmpty()) {
@@ -248,6 +315,10 @@ public final class CosmeticHttpSync {
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 401) {
+            token.set(null);
+            throw new IOException("session/join: unauthorized");
+        }
         if (resp.statusCode() != 200) {
             throw new IOException("session/join: " + resp.statusCode() + " " + resp.body());
         }
@@ -255,48 +326,10 @@ public final class CosmeticHttpSync {
 
         JsonObject obj = GSON.fromJson(resp.body(), JsonObject.class);
         if (obj.has("snapshot")) {
-            for (var el : obj.getAsJsonArray("snapshot")) {
+            for (JsonElement el : obj.getAsJsonArray("snapshot")) {
                 applyPeer(el.getAsJsonObject());
             }
         }
-    }
-
-    private void openSseStream() {
-        String tk = token.get();
-        if (tk == null) return;
-        sseThread = new Thread(() -> {
-            try {
-                HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/stream"))
-                        .header("Authorization", "Bearer " + tk)
-                        .header("Accept", "text/event-stream")
-                        .timeout(Duration.ofHours(1))
-                        .GET()
-                        .build();
-                HttpResponse<java.io.InputStream> resp = http.send(req, HttpResponse.BodyHandlers.ofInputStream());
-                if (resp.statusCode() != 200) {
-                    System.err.println("[EssentialPatcher] SSE stream rejected: " + resp.statusCode());
-                    return;
-                }
-                try (BufferedReader r = new BufferedReader(new InputStreamReader(resp.body(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while (!closing.get() && (line = r.readLine()) != null) {
-                        if (line.startsWith("data: ")) {
-                            try {
-                                handleEvent(GSON.fromJson(line.substring(6), JsonObject.class));
-                            } catch (Exception e) {
-                                // ignore one malformed event
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                if (!closing.get()) {
-                    System.err.println("[EssentialPatcher] SSE stream ended: " + e.getMessage());
-                }
-            }
-        }, "EssentialPatcher-SSE");
-        sseThread.setDaemon(true);
-        sseThread.start();
     }
 
     private void handleEvent(JsonObject ev) {
@@ -386,15 +419,30 @@ public final class CosmeticHttpSync {
             HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() == 401) {
                 token.set(null);
-                String ki = lastKeyIngredient;
-                String lb = lastLabel;
-                if (ki != null) {
-                    closeSession(false);
-                    onServerJoin(ki, lb != null ? lb : "reauth");
-                }
+                restartSession("heartbeat unauthorized");
+                return;
             }
-        } catch (Exception ignored) {
+            if (resp.statusCode() != 200) {
+                onHeartbeatFailure("heartbeat: " + resp.statusCode());
+                return;
+            }
+            heartbeatFailures.set(0);
+        } catch (Exception e) {
+            onHeartbeatFailure("heartbeat: " + e.getMessage());
         }
+    }
+
+    private void onHeartbeatFailure(String reason) {
+        if (heartbeatFailures.incrementAndGet() >= MAX_HEARTBEAT_FAILURES) {
+            restartSession(reason);
+        }
+    }
+
+    private void restartSession(String reason) {
+        String ki = lastKeyIngredient;
+        if (ki == null || !isEnabled()) return;
+        System.err.println("[EssentialPatcher] http sync reconnecting: " + reason);
+        onServerJoin(ki, lastLabel != null ? lastLabel : "reconnect");
     }
 
     private void pushCosmetics(SyncedCosmeticOutfit outfit) throws Exception {
@@ -405,9 +453,14 @@ public final class CosmeticHttpSync {
                 .header("Authorization", "Bearer " + tk)
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(10))
-                .PUT(HttpRequest.BodyPublishers.ofString(body.toString()))
+                .PUT(HttpRequest.BodyPublishers.ofString(body))
                 .build();
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 401) {
+            token.set(null);
+            restartSession("cosmetics push unauthorized");
+            return;
+        }
         if (resp.statusCode() != 200) {
             throw new IOException("PUT /api/cosmetics: " + resp.statusCode() + " " + resp.body());
         }
