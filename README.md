@@ -48,7 +48,7 @@ For ads and purchases, the patcher removes or blocks local UI and packet paths r
 
 ## Cosmetic Sync Server -- Privacy (GDPR)
 
-Essential Patcher runs an independent cosmetic sync service at `cosmetics.leclowndu93150.dev` so patcher users can see each other's cosmetics. Here is exactly what is stored and what is not.
+Essential Patcher runs an independent cosmetic sync service at `cosmetics.leclowndu93150.dev` so patcher users can see each other's cosmetics. Its full source is in [`server/`](server) in this repository. Here is exactly what is stored and what is not.
 
 ### What is stored
 
@@ -61,8 +61,8 @@ Essential Patcher runs an independent cosmetic sync service at `cosmetics.leclow
 
 ### What is NOT stored
 
-- No IP addresses are logged or stored.
-- No Minecraft access tokens or session tokens are stored. The Mojang session auth is a one-time handshake to verify you own the account; the token is never saved.
+- No Minecraft or Microsoft access tokens, session tokens, or refresh tokens. The mod never reads them and the service has no field that accepts them.
+- No IP addresses in the database. Your IP is held in memory for at most two minutes for rate limiting, and appears in the nginx access log like on any website.
 - No email addresses, passwords, or account credentials.
 - No playtime, server history, or gameplay data.
 - No chat messages, friend lists, or social data.
@@ -71,10 +71,13 @@ Essential Patcher runs an independent cosmetic sync service at `cosmetics.leclow
 
 ### How authentication works
 
-1. The client requests a challenge (random server ID) from the sync server.
-2. The client calls Mojang's `joinServer` with that challenge to prove account ownership.
-3. The sync server calls Mojang's `hasJoined` to verify.
-4. On success, the server issues a short-lived JWT containing only your UUID. No Mojang tokens are retained.
+The client sends its UUID and username once per launcher session and receives a JWT containing only the UUID. Every later request derives who you are from that JWT, so no endpoint accepts a caller UUID as a parameter.
+
+**This does not currently verify the UUID against Mojang.** Anyone can ask the service for a JWT for any UUID and use it to overwrite that UUID's stored cosmetic loadout or list the members of a session. Nothing about this exposes your account or your tokens -- the worst case is someone changing which hat the mod draws on you, for other patcher users only. The planned fix is the standard `joinServer`/`hasJoined` handshake, which proves the UUID to the service without the service ever seeing an access token.
+
+### Operational metrics
+
+The service reports usage counters (`player_seen`, `cosmetic_sync_read`, `cosmetic_sync_write`) to a private admin dashboard on the same VPS. Those events carry your UUID and the cosmetic IDs involved, and nothing else.
 
 ### Data deletion
 

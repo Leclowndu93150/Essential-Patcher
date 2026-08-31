@@ -32,12 +32,7 @@ public class EssentialpatcherFabric implements ClientModInitializer {
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> CosmeticHttpSync.get().onServerLeave());
 
-        CosmeticHttpSync.get().setAccessTokenProvider(new CosmeticHttpSync.AccessTokenProvider() {
-            @Override
-            public String accessToken() {
-                return Minecraft.getInstance().getUser().getAccessToken();
-            }
-
+        CosmeticHttpSync.get().setLocalProfileProvider(new CosmeticHttpSync.LocalProfileProvider() {
             @Override
             public String username() {
                 return Minecraft.getInstance().getUser().getName();

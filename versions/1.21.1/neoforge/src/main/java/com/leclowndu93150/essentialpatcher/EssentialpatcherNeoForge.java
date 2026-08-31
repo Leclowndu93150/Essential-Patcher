@@ -29,12 +29,7 @@ public class EssentialpatcherNeoForge {
         NeoForge.EVENT_BUS.addListener(this::onPlayerJoin);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> CosmeticHttpSync.get().onServerLeave());
 
-        CosmeticHttpSync.get().setAccessTokenProvider(new CosmeticHttpSync.AccessTokenProvider() {
-            @Override
-            public String accessToken() {
-                return Minecraft.getInstance().getUser().getAccessToken();
-            }
-
+        CosmeticHttpSync.get().setLocalProfileProvider(new CosmeticHttpSync.LocalProfileProvider() {
             @Override
             public String username() {
                 return Minecraft.getInstance().getUser().getName();

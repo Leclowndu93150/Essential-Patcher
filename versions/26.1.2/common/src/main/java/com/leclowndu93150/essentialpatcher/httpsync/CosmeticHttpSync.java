@@ -36,9 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class CosmeticHttpSync {
 
-    public interface AccessTokenProvider {
-        String accessToken();
-
+    public interface LocalProfileProvider {
         String username();
 
         UUID uuid();
@@ -63,7 +61,7 @@ public final class CosmeticHttpSync {
         return t;
     });
 
-    private volatile AccessTokenProvider tokenProvider;
+    private volatile LocalProfileProvider profileProvider;
     private final AtomicReference<String> token = new AtomicReference<>();
     private final AtomicReference<String> sessionId = new AtomicReference<>();
     private final AtomicBoolean joined = new AtomicBoolean();
@@ -78,8 +76,8 @@ public final class CosmeticHttpSync {
     private volatile String lastLabel;
     private final ConcurrentHashMap<UUID, SyncedCosmeticOutfit> sessionPeers = new ConcurrentHashMap<>();
 
-    public void setAccessTokenProvider(AccessTokenProvider p) {
-        this.tokenProvider = p;
+    public void setLocalProfileProvider(LocalProfileProvider p) {
+        this.profileProvider = p;
     }
 
     public boolean isEnabled() {
@@ -94,7 +92,7 @@ public final class CosmeticHttpSync {
     }
 
     public void onServerJoin(String keyIngredient, String label) {
-        if (!isEnabled() || tokenProvider == null) return;
+        if (!isEnabled() || profileProvider == null) return;
         closeSession(false);
         closing.set(false);
         lastKeyIngredient = keyIngredient;
@@ -270,7 +268,7 @@ public final class CosmeticHttpSync {
 
     private void ensureAuthenticated() throws Exception {
         if (token.get() != null) return;
-        if (tokenProvider == null) throw new IllegalStateException("AccessTokenProvider not set");
+        if (profileProvider == null) throw new IllegalStateException("LocalProfileProvider not set");
 
         if (!authenticating.compareAndSet(false, true)) {
             long deadline = System.currentTimeMillis() + 15_000L;
@@ -283,8 +281,8 @@ public final class CosmeticHttpSync {
             }
         }
         try {
-            UUID uuid = tokenProvider.uuid();
-            String username = tokenProvider.username();
+            UUID uuid = profileProvider.uuid();
+            String username = profileProvider.username();
             if (uuid == null || username == null || username.isEmpty()) {
                 throw new IllegalStateException("no local profile");
             }
@@ -355,7 +353,7 @@ public final class CosmeticHttpSync {
     private void applyTrigger(JsonObject obj) {
         try {
             UUID uuid = UUID.fromString(obj.get("uuid").getAsString());
-            if (tokenProvider != null && uuid.equals(tokenProvider.uuid())) return;
+            if (profileProvider != null && uuid.equals(profileProvider.uuid())) return;
             String slot = obj.has("slot") ? obj.get("slot").getAsString() : null;
             String triggerName = obj.has("trigger") ? obj.get("trigger").getAsString() : null;
             if (slot == null || triggerName == null) return;
@@ -370,7 +368,7 @@ public final class CosmeticHttpSync {
     private void applyPeer(JsonObject obj) {
         try {
             UUID uuid = UUID.fromString(obj.get("uuid").getAsString());
-            if (tokenProvider != null && uuid.equals(tokenProvider.uuid())) return;
+            if (profileProvider != null && uuid.equals(profileProvider.uuid())) return;
             SyncedCosmeticOutfit outfit = parseOutfit(obj);
             sessionPeers.put(uuid, outfit);
             CosmeticSyncData.applyRemoteOutfit(uuid, outfit);
