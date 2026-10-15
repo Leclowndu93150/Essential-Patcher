@@ -1,0 +1,558 @@
+CHANGELOG.md
+README.md
+build.gradle.kts
+gradle/wrapper/gradle-wrapper.properties
+versions/1.21.11/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java
+versions/1.21.11/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/notices/CosmeticNoticesMixin.java
+versions/1.21.11/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/notices/NoticeBannerManagerMixin.java
+versions/1.21.11/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/notices/PersistentToastMixin.java
+versions/1.21.11/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/notices/SaleNoticeManagerMixin.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfig.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfigScreen.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/CosmeticHttpSync.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/CosmeticsManagerMixin.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/ParticleSystemMixin.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/telemetry/TelemetryManagerMixin.java
+versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/network/CosmeticSyncData.java
+versions/26.3/common/src/main/resources/essentialpatcher.mixins.json
+versions/26.3/fabric/src/main/java/com/leclowndu93150/essentialpatcher/EssentialpatcherFabric.java
+
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfig.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfig.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfig.java
+index 8e19b9ae3085..03399ebae73f 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfig.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfig.java
+@@ -16,10 +16,12 @@ public class PatcherConfig {
+     public boolean unlockAllCosmetics = true;
+     public boolean showAllFree = true;
+     public boolean disableNewCosmeticDots = true;
+     public boolean hideCosmeticsInInventoryWithShaders = true;
+     public boolean fixShaderGlintCorruption = true;
++    public boolean showDelistedCosmetics = true;
++    public boolean hideEssentialCosmetics = false;
+
+     public boolean disableTelemetry = true;
+     public boolean disableFPSTelemetry = true;
+     public boolean disableImpressionTracking = true;
+
+@@ -37,10 +39,11 @@ public class PatcherConfig {
+     public boolean disableWardrobeNagModals = true;
+     public boolean skipTosPopup = true;
+     public boolean disableWikiToast = true;
+     public boolean skipCommunityRules = true;
+     public boolean hideAnnouncementChannel = true;
++    public boolean hideMenuPaperdoll = false;
+     public boolean disableAutoUpdate = false;
+
+     public boolean httpCosmeticSync = true;
+     public String httpCosmeticSyncBaseUrl = "https://cosmetics.leclowndu93150.dev";
+
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfigScreen.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfigScreen.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfigScreen.java
+index db1872da4c8c..197de483f7b5 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfigScreen.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/config/PatcherConfigScreen.java
+@@ -34,10 +34,16 @@ public class PatcherConfigScreen {
+                                 "Hides cosmetics on the inventory paperdoll while a shader pack is active. Works around an Iris/Oculus bug that breaks enchanted item textures (purple/black glint) when cosmetics render in the inventory.",
+                                 defaults.hideCosmeticsInInventoryWithShaders, () -> config.hideCosmeticsInInventoryWithShaders, v -> config.hideCosmeticsInInventoryWithShaders = v))
+                         .option(toggle("Fix Shader Glint Corruption",
+                                 "Isolates Iris/Oculus's captured entity/item render state around cosmetic particle rendering. Fixes enchanted items showing as purple/black in the GUI when shaders are active (Iris #2427).",
+                                 defaults.fixShaderGlintCorruption, () -> config.fixShaderGlintCorruption, v -> config.fixShaderGlintCorruption = v))
++                        .option(toggle("Show Delisted Cosmetics",
++                                "Loads cosmetics Essential no longer sells, using the list published by the cosmetic sync server, so they show up unlocked in the wardrobe. Needs Unlock All Cosmetics.",
++                                defaults.showDelistedCosmetics, () -> config.showDelistedCosmetics, v -> config.showDelistedCosmetics = v))
++                        .option(toggle("Hide Essential Cosmetics",
++                                "Strips the wardrobe down to Outfits, Skins and Capes. Hides the featured store, emotes and every non-cape cosmetic. Reopen the wardrobe to apply.",
++                                defaults.hideEssentialCosmetics, () -> config.hideEssentialCosmetics, v -> config.hideEssentialCosmetics = v))
+                         .build())
+                 .category(ConfigCategory.createBuilder()
+                         .name(Component.literal("Telemetry"))
+                         .option(toggle("Disable Telemetry",
+                                 "Blocks all telemetry packets — hardware info, display data, feature usage, action tracking.",
+@@ -97,10 +103,13 @@ public class PatcherConfigScreen {
+                                 "Agrees to the community chat rules automatically instead of showing the popup.",
+                                 defaults.skipCommunityRules, () -> config.skipCommunityRules, v -> config.skipCommunityRules = v))
+                         .option(toggle("Hide Announcement Channel",
+                                 "Hides the Essential announcement channel from the social tab.",
+                                 defaults.hideAnnouncementChannel, () -> config.hideAnnouncementChannel, v -> config.hideAnnouncementChannel = v))
++                        .option(toggle("Hide Menu Paperdoll",
++                                "Removes the player model Essential draws on the title and pause screens. Applies the next time the menu opens.",
++                                defaults.hideMenuPaperdoll, () -> config.hideMenuPaperdoll, v -> config.hideMenuPaperdoll = v))
+                         .option(toggle("Disable Auto-Update",
+                                 "Prevents Essential from auto-updating by writing autoUpdate=false to its stage2 config. Takes effect next launch.",
+                                 defaults.disableAutoUpdate, () -> config.disableAutoUpdate, v -> config.disableAutoUpdate = v))
+                         .build())
+                 .save(config::save)
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/CosmeticHttpSync.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/CosmeticHttpSync.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/CosmeticHttpSync.java
+index 1c41326fcfc5..af22b359fa83 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/CosmeticHttpSync.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/CosmeticHttpSync.java
+@@ -31,10 +31,11 @@ import java.util.concurrent.ScheduledExecutorService;
+ import java.util.concurrent.ScheduledFuture;
+ import java.util.concurrent.TimeUnit;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import java.util.concurrent.atomic.AtomicReference;
++import java.util.function.Consumer;
+
+ public final class CosmeticHttpSync {
+
+     public interface LocalProfileProvider {
+         String username();
+@@ -169,10 +170,33 @@ public final class CosmeticHttpSync {
+                 System.err.println("[EssentialPatcher] http sync trigger failed: " + e.getMessage());
+             }
+         });
+     }
+
++    public void fetchCosmeticCatalog(Consumer<List<String>> onLoaded) {
++        if (!isEnabled()) return;
++        scheduler.submit(() -> {
++            try {
++                HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/catalog/cosmetics"))
++                        .timeout(Duration.ofSeconds(10))
++                        .GET()
++                        .build();
++                HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
++                if (resp.statusCode() != 200) return;
++                List<String> ids = new ArrayList<>();
++                for (JsonElement id : GSON.fromJson(resp.body(), JsonObject.class).getAsJsonArray("ids")) {
++                    ids.add(id.getAsString());
++                }
++                if (!ids.isEmpty()) {
++                    onLoaded.accept(ids);
++                }
++            } catch (Exception e) {
++                System.err.println("[EssentialPatcher] cosmetic catalog fetch failed: " + e.getMessage());
++            }
++        });
++    }
++
+     private void pushCurrentOutfit() {
+         if (!joined.get()) return;
+         try {
+             SyncedCosmeticOutfit local = CosmeticSyncData.getLiveLocalOutfit();
+             if (!local.isEmpty()) {
+@@ -204,12 +228,11 @@ public final class CosmeticHttpSync {
+             } catch (Exception e) {
+                 if (!closing.get() && generation == sessionGeneration.get()) {
+                     System.err.println("[EssentialPatcher] http sync session failed: " + e.getMessage());
+                 }
+             }
+-            // a stale session thread must not clear the flag a newer session already set
+-            if (generation == sessionGeneration.get()) joined.set(false);
++            joined.set(false);
+             if (closing.get() || generation != sessionGeneration.get()) return;
+
+             attempt = streamed ? 0 : attempt + 1;
+             if (!sleepQuietly(backoffMs(attempt))) return;
+         }
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java
+index 66f956eaa5bf..b01e8d72066e 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/httpsync/SessionKey.java
+@@ -1,44 +1,44 @@
+ package com.leclowndu93150.essentialpatcher.httpsync;
+
++import gg.essential.Essential;
++import gg.essential.network.connectionmanager.sps.SPSManager;
+ import gg.essential.sps.SpsAddress;
+-import gg.essential.util.USession;
++import gg.essential.upnp.model.UPnPSession;
+ import net.minecraft.client.Minecraft;
+ import net.minecraft.client.multiplayer.ServerData;
+ import net.minecraft.client.server.IntegratedServer;
+
+ import java.util.Locale;
+ import java.util.UUID;
+
+-/**
+- * Picks a session_id ingredient + label appropriate for the current connection.
+- * - Essential-hosted world (guest): the host's UUID from the SPS address.
+- * - Multiplayer: ip:port (lowercased).
+- * - Published singleplayer (host): the host's own UUID, matching what guests compute.
+- * - Singleplayer (not published): the world name.
+- *
+- * The CosmeticHttpSync hashes this so the actual server_id we send to the panel is opaque.
+- */
+ public final class SessionKey {
++    private static final String DEFAULT_PORT_SUFFIX = ":25565";
++
+     private SessionKey() {
+     }
+
+     public static String[] compute() {
+         Minecraft mc = Minecraft.getInstance();
++        String[] sps = computeEssentialSps(mc);
++        if (sps != null) {
++            return sps;
++        }
++
+         ServerData sd = mc.getCurrentServer();
+         if (sd != null && sd.ip != null && !sd.ip.isBlank()) {
+-            String[] sps = fromEssentialSpsAddress(sd.ip);
+-            return sps != null ? sps : new String[] { sd.ip.toLowerCase(Locale.ROOT), "smp" };
++            return new String[] { normalizeAddress(sd.ip), "smp" };
+         }
+         IntegratedServer integ = mc.hasSingleplayerServer() ? mc.getSingleplayerServer() : null;
+         if (integ != null) {
+-            // Essential 1.5+ hosts worlds by publishing the integrated server; guests key on the host UUID,
+-            // which Essential takes from its active session (can differ from mc.getUser() after an account switch).
+-            if (integ.isPublished()) {
+-                return essentialSpsKey(USession.Companion.activeNow().getUuid());
+-            }
+             String world = integ.getWorldData() != null ? integ.getWorldData().getLevelName() : "world";
++            if (integ.isPublished()) {
++                String host = mc.getUser() != null && mc.getUser().getProfileId() != null
++                        ? mc.getUser().getProfileId().toString()
++                        : "host";
++                return new String[] { host + "|" + world, "lan" };
++            }
+             return new String[] { world, "sp" };
+         }
+         return null;
+     }
+
+@@ -48,9 +48,37 @@ public final class SessionKey {
+             return null;
+         }
+         return essentialSpsKey(spsAddress.getHost());
+     }
+
++    private static String[] computeEssentialSps(Minecraft mc) {
++        try {
++            SPSManager spsManager = Essential.getInstance().getConnectionManager().getSpsManager();
++            UPnPSession localSession = spsManager.getLocalSession();
++            if (localSession != null) {
++                return essentialSpsKey(localSession.getHostUUID());
++            }
++
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/CosmeticsManagerMixin.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/CosmeticsManagerMixin.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/CosmeticsManagerMixin.java
+index 7e0524839f2d..4d34f027c44c 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/CosmeticsManagerMixin.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/CosmeticsManagerMixin.java
+@@ -1,17 +1,20 @@
+ package com.leclowndu93150.essentialpatcher.mixin.cosmetics;
+
+ import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
+ import com.leclowndu93150.essentialpatcher.cosmetics.CosmeticSaver;
++import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
+ import com.leclowndu93150.essentialpatcher.httpsync.SyncedCosmeticOutfit;
+ import com.leclowndu93150.essentialpatcher.network.CosmeticSyncData;
+ import gg.essential.cosmetics.model.CosmeticUnlockData;
+ import gg.essential.event.client.ClientTickEvent;
+ import gg.essential.gui.elementa.state.v2.MutableState;
+ import gg.essential.network.connectionmanager.cosmetics.CosmeticsData;
+ import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager;
++import gg.essential.network.connectionmanager.cosmetics.InfraCosmeticsData;
+ import gg.essential.network.connectionmanager.cosmetics.InfraEquippedOutfitsManager;
++import net.minecraft.client.Minecraft;
+ import org.spongepowered.asm.mixin.Mixin;
+ import org.spongepowered.asm.mixin.Shadow;
+ import org.spongepowered.asm.mixin.Unique;
+ import org.spongepowered.asm.mixin.injection.At;
+ import org.spongepowered.asm.mixin.injection.Inject;
+@@ -30,10 +33,13 @@ public abstract class CosmeticsManagerMixin {
+     public abstract void unlockAllCosmetics();
+
+     @Shadow
+     public abstract InfraEquippedOutfitsManager getInfraEquippedOutfitsManager();
+
++    @Shadow
++    public abstract InfraCosmeticsData getInfraCosmeticsData();
++
+     @Shadow
+     private MutableState<Boolean> cosmeticsLoaded;
+
+     @Shadow
+     private CosmeticsData cosmeticsData;
+@@ -45,10 +51,13 @@ public abstract class CosmeticsManagerMixin {
+     private boolean essentialPatcher$hasUnlockedThisSession = false;
+
+     @Unique
+     private int essentialPatcher$lastCatalogSize = -1;
+
++    @Unique
++    private boolean essentialPatcher$catalogRequested = false;
++
+     @Inject(method = "addUnlockedCosmeticsData", at = @At("RETURN"))
+     private void onUnlockedCosmeticsReceived(Map<String, CosmeticUnlockData> unlockedCosmeticsData, CallbackInfo ci) {
+         if (PatcherConfig.get().unlockAllCosmetics) {
+             unlockAllCosmetics();
+             essentialPatcher$hasUnlockedThisSession = true;
+@@ -59,10 +68,17 @@ public abstract class CosmeticsManagerMixin {
+     @Inject(method = "tick", at = @At("RETURN"))
+     private void onTick(ClientTickEvent event, CallbackInfo ci) {
+         if (!PatcherConfig.get().unlockAllCosmetics) return;
+         if (!cosmeticsLoaded.getUntracked()) return;
+
++        if (!essentialPatcher$catalogRequested && PatcherConfig.get().showDelistedCosmetics) {
++            essentialPatcher$catalogRequested = true;
++            InfraCosmeticsData infraCosmeticsData = getInfraCosmeticsData();
++            CosmeticHttpSync.get().fetchCosmeticCatalog(ids ->
++                    Minecraft.getInstance().execute(() -> infraCosmeticsData.requestCosmeticsIfMissing(ids)));
++        }
++
+         int catalogSize = cosmeticsData.getCosmetics().get().size();
+         if (catalogSize == essentialPatcher$lastCatalogSize) return;
+         essentialPatcher$lastCatalogSize = catalogSize;
+
+         unlockAllCosmetics();
+@@ -74,10 +90,11 @@ public abstract class CosmeticsManagerMixin {
+
+     @Inject(method = "resetState", at = @At("HEAD"))
+     private void onResetState(CallbackInfo ci) {
+         essentialPatcher$hasUnlockedThisSession = false;
+         essentialPatcher$lastCatalogSize = -1;
++        essentialPatcher$catalogRequested = false;
+     }
+
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/ParticleSystemMixin.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/ParticleSystemMixin.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/ParticleSystemMixin.java
+index 299cd0d52a46..0a611de2d8f2 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/ParticleSystemMixin.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/cosmetics/ParticleSystemMixin.java
+@@ -14,23 +14,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+ public class ParticleSystemMixin {
+
+     @Unique
+     private int[] essentialPatcher$capturedStateSnapshot;
+
+-    // render-<hash> is Kotlin-mangled; plain selectors reject '-', so match by regex.
+-    // The hash changes with the Uuid/Light param types, hence not pinned.
+-    @Inject(method = "name=/^render-\\w+$/", at = @At("HEAD"))
++    @Inject(method = "render(Lgg/essential/model/util/UMatrixStack;Lgg/essential/lib/kotgl/matrix/vectors/Vec3;Lgg/essential/model/util/Quaternion;Lgg/essential/model/backend/RenderBackend$CommandQueue;Ljava/util/UUID;ZZLjava/util/UUID;)V", at = @At("HEAD"))
+     private void essentialPatcher$isolateCapturedStateStart(CallbackInfo ci) {
+         if (!PatcherConfig.get().fixShaderGlintCorruption) return;
+         if (!ShaderCompat.isShaderPackActive()) return;
+         if (!IrisCompat.isAvailable()) return;
+
+         essentialPatcher$capturedStateSnapshot = IrisCompat.snapshotCapturedState();
+         IrisCompat.restoreCapturedState(new int[]{0, 0, 0});
+     }
+
+-    @Inject(method = "name=/^render-\\w+$/", at = @At("RETURN"))
++    @Inject(method = "render(Lgg/essential/model/util/UMatrixStack;Lgg/essential/lib/kotgl/matrix/vectors/Vec3;Lgg/essential/model/util/Quaternion;Lgg/essential/model/backend/RenderBackend$CommandQueue;Ljava/util/UUID;ZZLjava/util/UUID;)V", at = @At("RETURN"))
+     private void essentialPatcher$isolateCapturedStateEnd(CallbackInfo ci) {
+         if (essentialPatcher$capturedStateSnapshot == null) return;
+         IrisCompat.restoreCapturedState(essentialPatcher$capturedStateSnapshot);
+         essentialPatcher$capturedStateSnapshot = null;
+     }
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/telemetry/TelemetryManagerMixin.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/telemetry/TelemetryManagerMixin.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/telemetry/TelemetryManagerMixin.java
+index aa220409915f..6de2f8c16e35 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/telemetry/TelemetryManagerMixin.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/mixin/telemetry/TelemetryManagerMixin.java
+@@ -16,10 +16,45 @@ public class TelemetryManagerMixin {
+         if (PatcherConfig.get().disableTelemetry) {
+             ci.cancel();
+         }
+     }
+
++    @Inject(method = "queueHardwareTelemetry", at = @At("HEAD"), cancellable = true)
++    private void onQueueHardware(CallbackInfo ci) {
++        if (PatcherConfig.get().disableTelemetry) {
++            ci.cancel();
++        }
++    }
++
++    @Inject(method = "sendInitialAutoUpdateState", at = @At("HEAD"), cancellable = true)
++    private void onSendInitialAutoUpdateState(CallbackInfo ci) {
++        if (PatcherConfig.get().disableTelemetry) {
++            ci.cancel();
++        }
++    }
++
++    @Inject(method = "setupAutoUpdateTracking", at = @At("HEAD"), cancellable = true)
++    private void onSetupAutoUpdateTracking(CallbackInfo ci) {
++        if (PatcherConfig.get().disableTelemetry) {
++            ci.cancel();
++        }
++    }
++
++    @Inject(method = "sendAutoUpdateTelemetry", at = @At("HEAD"), cancellable = true)
++    private void onSendAutoUpdate(CallbackInfo ci) {
++        if (PatcherConfig.get().disableTelemetry) {
++            ci.cancel();
++        }
++    }
++
++    @Inject(method = "sendDisplayData", at = @At("HEAD"), cancellable = true)
++    private void onSendDisplay(CallbackInfo ci) {
++        if (PatcherConfig.get().disableTelemetry) {
++            ci.cancel();
++        }
++    }
++
+     @Inject(method = "clientActionPerformed(Lgg/essential/network/connectionmanager/telemetry/TelemetryManager$Actions;)V", at = @At("HEAD"), cancellable = true)
+     private void onClientAction(CallbackInfo ci) {
+         if (PatcherConfig.get().disableTelemetry) {
+             ci.cancel();
+         }
+##### versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/network/CosmeticSyncData.java
+diff --git a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/network/CosmeticSyncData.java b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/network/CosmeticSyncData.java
+index 9526ebae1e79..12cbce2874e0 100644
+--- a/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/network/CosmeticSyncData.java
++++ b/versions/26.3/common/src/main/java/com/leclowndu93150/essentialpatcher/network/CosmeticSyncData.java
+@@ -1,11 +1,13 @@
+ package com.leclowndu93150.essentialpatcher.network;
+
+ import com.leclowndu93150.essentialpatcher.cosmetics.CosmeticSaver;
+ import com.leclowndu93150.essentialpatcher.httpsync.SyncedCosmeticOutfit;
++import com.leclowndu93150.essentialpatcher.mixin.cosmetics.InfraEquippedOutfitsManagerAccessor;
+ import gg.essential.Essential;
+ import gg.essential.cosmetics.EquippedCosmeticId;
++import gg.essential.mod.Skin;
+ import gg.essential.mod.cosmetics.CosmeticSlot;
+ import gg.essential.mod.cosmetics.settings.CosmeticSetting;
+ import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager;
+ import gg.essential.network.connectionmanager.cosmetics.EquippedOutfitsManager;
+ import gg.essential.network.connectionmanager.cosmetics.InfraEquippedOutfitsManager;
+@@ -48,17 +50,22 @@ public class CosmeticSyncData {
+             InfraEquippedOutfitsManager infraManager = cosmeticsManager.getInfraEquippedOutfitsManager();
+
+             infraManager.update(playerUuid, new InfraEquippedOutfitsManager.InfraOutfit(
+                     toInfraCosmetics(outfit.equipped()),
+                     toInfraSettings(outfit.settings()),
+-                    null
++                    currentSkin(infraManager, playerUuid)
+             ));
+         } catch (Exception e) {
+             System.err.println("[EssentialPatcher] Failed to apply remote cosmetics for " + playerUuid + ": " + e.getMessage());
+         }
+     }
+
++    public static Skin currentSkin(InfraEquippedOutfitsManager manager, UUID playerUuid) {
++        InfraEquippedOutfitsManager.InfraOutfit current = ((InfraEquippedOutfitsManagerAccessor) (Object) manager).essentialPatcher$getInfraOutfits().get(playerUuid);
++        return current != null ? current.getSkin() : null;
++    }
++
+     public static SyncedCosmeticOutfit fromEquippedOutfit(EquippedOutfitsManager.Outfit outfit) {
+         Map<String, String> equipped = new HashMap<>();
+         Map<String, List<String>> settings = new HashMap<>();
+         for (var entry : outfit.getCosmetics().entrySet()) {
+             EquippedCosmeticId equippedCosmetic = entry.getValue();
+##### versions/26.3/common/src/main/resources/essentialpatcher.mixins.json
+diff --git a/versions/26.3/common/src/main/resources/essentialpatcher.mixins.json b/versions/26.3/common/src/main/resources/essentialpatcher.mixins.json
+index 9495ac6ad1df..1a0be2a15aed 100644
+--- a/versions/26.3/common/src/main/resources/essentialpatcher.mixins.json
++++ b/versions/26.3/common/src/main/resources/essentialpatcher.mixins.json
+@@ -10,28 +10,33 @@
+     "cosmetics.ParticleSystemMixin",
+     "cosmetics.PricingInfoMixin",
+     "cosmetics.InfraEquippedOutfitsMixin",
+     "cosmetics.EmoteWheelMixin",
+     "cosmetics.OutfitUpdatesPayloadMixin",
++    "cosmetics.InfraEquippedOutfitsManagerAccessor",
+     "render.HumanoidArmorLayerAccessor",
+     "render.HumanoidArmorLayerMixin",
+     "telemetry.TelemetryManagerMixin",
+-    "telemetry.TelemetryGathererMixin",
+     "telemetry.ImpressionTelemetryMixin",
+     "telemetry.FPSTelemetryMixin",
+     "telemetry.FeatureSessionTelemetryMixin",
+     "notices.NoticesManagerMixin",
++    "notices.PersistentToastMixin",
++    "notices.SaleNoticeManagerMixin",
++    "notices.NoticeBannerManagerMixin",
++    "notices.CosmeticNoticesMixin",
+     "network.CoinsManagerMixin",
+     "network.ConnectionManagerMixin",
+-    "network.IntegratedServerPublishMixin",
+     "gui.PurchaseFlowMixin",
+     "gui.WardrobeMixin",
+     "gui.CoinsPurchaseModalMixin",
+     "gui.OnboardingMixin",
+     "gui.WikiToastMixin",
+     "gui.RulesManagerMixin",
+-    "gui.ChatManagerMixin"
++    "gui.ChatManagerMixin",
++    "gui.LeftSideBarMixin",
++    "gui.WardrobeStateMixin"
+   ],
+   "client": [],
+   "server": [],
+   "injectors": {
+     "defaultRequire": 0
+##### versions/26.3/fabric/src/main/java/com/leclowndu93150/essentialpatcher/EssentialpatcherFabric.java
+diff --git a/versions/26.3/fabric/src/main/java/com/leclowndu93150/essentialpatcher/EssentialpatcherFabric.java b/versions/26.3/fabric/src/main/java/com/leclowndu93150/essentialpatcher/EssentialpatcherFabric.java
+index 79b46941fa5a..c86d352a7dd4 100644
+--- a/versions/26.3/fabric/src/main/java/com/leclowndu93150/essentialpatcher/EssentialpatcherFabric.java
++++ b/versions/26.3/fabric/src/main/java/com/leclowndu93150/essentialpatcher/EssentialpatcherFabric.java
+@@ -1,20 +1,20 @@
+ package com.leclowndu93150.essentialpatcher;
+
+ import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
+ import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
++import com.leclowndu93150.essentialpatcher.httpsync.EssentialSpsSyncListener;
+ import com.leclowndu93150.essentialpatcher.httpsync.SessionKey;
+ import net.fabricmc.api.ClientModInitializer;
+ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+ import net.minecraft.client.Minecraft;
+
+ import java.util.UUID;
+
+ import java.io.OutputStream;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
+-import java.nio.file.StandardCopyOption;
+ import java.util.Properties;
+
+ public class EssentialpatcherFabric implements ClientModInitializer {
+
+     @Override
+@@ -41,39 +41,31 @@ public class EssentialpatcherFabric implements ClientModInitializer {
+             @Override
+             public UUID uuid() {
+                 return Minecraft.getInstance().getUser().getProfileId();
+             }
+         });
++        EssentialSpsSyncListener.register();
+
+         if (config.disableAutoUpdate) {
+             disableEssentialAutoUpdate("26.3");
+         }
+     }
+
+     static void disableEssentialAutoUpdate(String mcVersion) {
+         try {
+             Path essentialDir = Minecraft.getInstance().gameDirectory.toPath().resolve("essential");
+-            // stage2 file gates loader updates; essential-loader.properties gates Essential mod version updates
+-            Path[] configFiles = {
+-                    essentialDir.resolve("loader/stage1/fabric/stage2.fabric_" + mcVersion + ".properties"),
+-                    essentialDir.resolve("essential-loader.properties")
+-            };
+-            for (Path configFile : configFiles) {
+-                Properties props = new Properties();
+-                if (Files.exists(configFile)) {
+-                    try (var in = Files.newInputStream(configFile)) {
+-                        props.load(in);
+-                    }
++            Path configFile = essentialDir.resolve("stage2." + mcVersion + ".properties");
++            Properties props = new Properties();
++            if (Files.exists(configFile)) {
++                try (var in = Files.newInputStream(configFile)) {
++                    props.load(in);
+                 }
+-                props.setProperty("autoUpdate", "false");
+-                Files.createDirectories(configFile.getParent());
+-                // write then move, so a crash mid-write cannot wipe the loader's other keys
+-                Path tmp = configFile.resolveSibling(configFile.getFileName() + ".tmp");
+-                try (OutputStream out = Files.newOutputStream(tmp)) {
+-                    props.store(out, null);
+-                }
+-                Files.move(tmp, configFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
++            }
++            props.setProperty("autoUpdate", "false");
++            Files.createDirectories(essentialDir);
++            try (OutputStream out = Files.newOutputStream(configFile)) {
++                props.store(out, null);
+             }
+         } catch (Exception e) {
+             System.err.println("[EssentialPatcher] Failed to disable auto-update: " + e.getMessage());
+         }
+     }
