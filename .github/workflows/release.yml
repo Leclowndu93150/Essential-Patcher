@@ -13,17 +13,15 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  # Resolved first so the build can stamp the tag's version into the jar name and fabric.mod.json.
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
-    uses: ./.github/workflows/build.yml
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      version: ${{ steps.resolve.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -31,15 +29,9 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - uses: actions/download-artifact@v8
-        with:
-          pattern: essentialpatcher-*-fabric
-          path: dist
-          merge-multiple: true
-
-      - name: Create release
+      - name: Resolve tag
+        id: resolve
         env:
-          GH_TOKEN: ${{ github.token }}
           INPUT_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
@@ -55,7 +47,51 @@ jobs:
             TAG="v${major}.${minor}.$((patch + 1))"
           fi
           echo "Releasing ${TAG}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: tag
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.tag.outputs.version }}
+
+  release:
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: essentialpatcher-*-fabric
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # Guard: refuse to publish any jar whose name does not carry the tag's version.
+          shopt -s nullglob
+          jars=(dist/*.jar)
+          [ "${#jars[@]}" -gt 0 ] || { echo "no jars in dist" >&2; exit 1; }
+          for j in "${jars[@]}"; do
+            case "$j" in
+              *-"${TAG#v}".jar) ;;
+              *) echo "jar name does not end with -${TAG#v}.jar: $j" >&2; exit 1 ;;
+            esac
+          done
           # Release notes are the CHANGELOG.md section of the tagged version; fall back to generated notes.
           awk -v v="${TAG#v}" '$0 == "## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
           if [ -s notes.md ]; then notes=(--notes-file notes.md); else notes=(--generate-notes); fi
-          gh release create "$TAG" dist/*.jar --repo "$GITHUB_REPOSITORY" --title "$TAG"             "${notes[@]}" --target "$GITHUB_SHA"
+          gh release create "$TAG" dist/*.jar --repo "$GITHUB_REPOSITORY" --title "$TAG" "${notes[@]}" --target "$GITHUB_SHA"
