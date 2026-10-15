@@ -70,3 +70,4 @@ libs/essential*.jar
 .omc*
 .codegraph/
 .serena/
+.claude/context-archive/
