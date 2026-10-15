@@ -206,7 +206,8 @@ public final class CosmeticHttpSync {
                     System.err.println("[EssentialPatcher] http sync session failed: " + e.getMessage());
                 }
             }
-            joined.set(false);
+            // a stale session thread must not clear the flag a newer session already set
+            if (generation == sessionGeneration.get()) joined.set(false);
             if (closing.get() || generation != sessionGeneration.get()) return;
 
             attempt = streamed ? 0 : attempt + 1;

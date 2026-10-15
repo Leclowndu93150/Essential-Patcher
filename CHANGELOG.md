@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.9
+
+- Added Minecraft 26.3 (Fabric), built against Essential 1.5.1.
+- 1.21.11 Fabric: updated to Essential 1.5.1. Other Minecraft versions are unchanged and still target Essential 1.4.1.1.
+- Fixed: the game crashed on startup with Essential 1.5.1 (`NoClassDefFoundError: gg/essential/event/sps/SPSStartEvent`). Essential removed its SPS event and manager; cosmetic sync for hosted worlds now keys off the world being opened to guests instead.
+- Retargeted the telemetry patches: Essential 1.5.1 moved hardware, display and auto-update telemetry into `TelemetryGatherer`.
+- Notice blocking (sales, banners, toasts, new-cosmetic dots) now relies on the single notice filter. Essential 1.5 removed the per-type hooks the other patches used.
+- Retargeted the shader glint fix to the new particle render signature.
+- "Disable auto-update" wrote to a file the Essential loader never reads. It now sets `autoUpdate=false` in `essential/loader/stage1/fabric/stage2.fabric_<version>.properties` and in `essential/essential-loader.properties`, which controls Essential mod updates. It takes effect from the next launch.
+- Fixed: cosmetic sync could stop pushing and heartbeating after a quick rejoin, when the previous session thread cleared the joined flag of the new one. Applies to every version.
+
 ## 1.0.8
 
 - Added Mod Menu integration on Fabric. The config screen existed but nothing on Fabric ever exposed it, so the Configure button did nothing — on 1.21.2 and up, which are Fabric-only, there was no way to reach the settings at all. Works on every Fabric version now.

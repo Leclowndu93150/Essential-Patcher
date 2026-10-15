@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.leclowndu93150"
-version = "1.0.8"
+version = "1.0.9"
 
 prism {
     curseMaven()
@@ -17,7 +17,7 @@ prism {
 
     publishing {
 
-        changelog = "added Mod Menu integration on Fabric, added 1.19.2, fixed Skip Community Rules breaking friend requests, fixed the Modrinth install 404, cosmetic sync now reconnects on its own, updated to Essential 1.4.1.1"
+        changelog = "added 26.3 (Fabric); 1.21.11 and 26.3 now target Essential 1.5.1 (fixed the startup crash, retargeted telemetry, notice and shader glint patches, cosmetic sync for hosted worlds); Disable auto-update now writes the files Essential actually reads; fixed cosmetic sync stalling after a quick rejoin"
         curseforge {
             accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
             projectId = "1555663"
@@ -100,7 +100,7 @@ prism {
             requires("yacl")
         }
         common {
-            localJar("libs/essential-1.21.11.jar")
+            localJar("libs/essential-1.21.9.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
             compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
@@ -112,7 +112,7 @@ prism {
                 disableAutoDetect()
             }
             dependencies {
-                localJar("libs/essential-1.21.11.jar")
+                localJar("libs/essential-1.21.9.jar")
                 modImplementation("curse.maven:yacl-667299:7437852")
                 modCompileOnly("curse.maven:modmenu-308702:7808781")
             }
@@ -164,6 +164,31 @@ prism {
                 localJar("libs/essential-26.1.2.jar")
                 modImplementation("curse.maven:yacl-667299:7904436")
                 modCompileOnly("curse.maven:modmenu-308702:8065321")
+            }
+        }
+    }
+
+    version("26.3") {
+        minecraftVersions("26.3")
+        publishingDependencies {
+            requires("yacl")
+        }
+        common {
+            localJar("libs/essential-26.3.jar")
+            modCompileOnly("curse.maven:yacl-667299:8935498")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+        }
+        fabric {
+            loaderVersion = "0.18.6"
+            fabricApi("0.161.0+26.3")
+            mixins {
+                disableAutoDetect()
+            }
+            dependencies {
+                localJar("libs/essential-26.3.jar")
+                modImplementation("curse.maven:yacl-667299:8935498")
+                modCompileOnly("curse.maven:modmenu-308702:8958984")
             }
         }
     }

@@ -1,0 +1,39 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.leclowndu93150.essentialpatcher.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "cosmetics.CosmeticsManagerMixin",
+    "cosmetics.CosmeticsRenderStateLiveMixin",
+    "cosmetics.EssentialModelRendererCompanionMixin",
+    "cosmetics.ParticleSystemMixin",
+    "cosmetics.PricingInfoMixin",
+    "cosmetics.InfraEquippedOutfitsMixin",
+    "cosmetics.EmoteWheelMixin",
+    "cosmetics.OutfitUpdatesPayloadMixin",
+    "render.HumanoidArmorLayerAccessor",
+    "render.HumanoidArmorLayerMixin",
+    "telemetry.TelemetryManagerMixin",
+    "telemetry.TelemetryGathererMixin",
+    "telemetry.ImpressionTelemetryMixin",
+    "telemetry.FPSTelemetryMixin",
+    "telemetry.FeatureSessionTelemetryMixin",
+    "notices.NoticesManagerMixin",
+    "network.CoinsManagerMixin",
+    "network.ConnectionManagerMixin",
+    "network.IntegratedServerPublishMixin",
+    "gui.PurchaseFlowMixin",
+    "gui.WardrobeMixin",
+    "gui.CoinsPurchaseModalMixin",
+    "gui.OnboardingMixin",
+    "gui.WikiToastMixin",
+    "gui.RulesManagerMixin",
+    "gui.ChatManagerMixin"
+  ],
+  "client": [],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

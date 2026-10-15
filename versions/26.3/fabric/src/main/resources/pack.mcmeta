@@ -1,0 +1,8 @@
+{
+  "pack": {
+    "description": "Essential Patcher",
+    "pack_format": 97,
+    "min_format": [97],
+    "max_format": [97]
+  }
+}

@@ -10,9 +10,9 @@ pluginManagement {
 }
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("org.jetbrains.kotlin.jvm") version "2.1.20" apply false
-    id("dev.prism.settings") version "+"
+    id("dev.prism.settings") version "0.5.17"
 }
 
 rootProject.name = "Essential Patcher"
@@ -46,6 +46,10 @@ prism {
         fabric()
     }
     version("26.1.2") {
+        common()
+        fabric()
+    }
+    version("26.3") {
         common()
         fabric()
     }
