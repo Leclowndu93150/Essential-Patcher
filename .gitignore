@@ -66,3 +66,7 @@ desktop.ini
 *.swp
 *~
 libs/essential*.jar
+
+.omc/
+.codegraph/
+.serena/
