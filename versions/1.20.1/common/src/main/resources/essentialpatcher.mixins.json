@@ -9,10 +9,12 @@
     "cosmetics.CosmeticsRenderStateLiveMixin",
     "cosmetics.EssentialModelRendererCompanionMixin",
     "cosmetics.ParticleSystemMixin",
+    "cosmetics.ParticleVertexConsumerProviderMixin",
     "cosmetics.PricingInfoMixin",
     "cosmetics.InfraEquippedOutfitsMixin",
     "cosmetics.EmoteWheelMixin",
     "cosmetics.OutfitUpdatesPayloadMixin",
+    "cosmetics.InfraEquippedOutfitsManagerAccessor",
     "render.HumanoidArmorLayerAccessor",
     "render.HumanoidArmorLayerMixin",
     "telemetry.TelemetryManagerMixin",
@@ -32,7 +34,9 @@
     "gui.OnboardingMixin",
     "gui.WikiToastMixin",
     "gui.RulesManagerMixin",
-    "gui.ChatManagerMixin"
+    "gui.ChatManagerMixin",
+    "gui.LeftSideBarMixin",
+    "gui.WardrobeStateMixin"
   ],
   "client": [],
   "server": [],

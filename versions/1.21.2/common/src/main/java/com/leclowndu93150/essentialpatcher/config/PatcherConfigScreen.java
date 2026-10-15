@@ -36,6 +36,12 @@ public class PatcherConfigScreen {
                         .option(toggle("Fix Shader Glint Corruption",
                                 "Isolates Iris/Oculus's captured entity/item render state around cosmetic particle rendering. Fixes enchanted items showing as purple/black in the GUI when shaders are active (Iris #2427).",
                                 defaults.fixShaderGlintCorruption, () -> config.fixShaderGlintCorruption, v -> config.fixShaderGlintCorruption = v))
+                        .option(toggle("Show Delisted Cosmetics",
+                                "Loads cosmetics Essential no longer sells, using the list published by the cosmetic sync server, so they show up unlocked in the wardrobe. Needs Unlock All Cosmetics.",
+                                defaults.showDelistedCosmetics, () -> config.showDelistedCosmetics, v -> config.showDelistedCosmetics = v))
+                        .option(toggle("Hide Essential Cosmetics",
+                                "Strips the wardrobe down to Outfits, Skins and Capes. Hides the featured store, emotes and every non-cape cosmetic. Reopen the wardrobe to apply.",
+                                defaults.hideEssentialCosmetics, () -> config.hideEssentialCosmetics, v -> config.hideEssentialCosmetics = v))
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Telemetry"))
@@ -99,6 +105,9 @@ public class PatcherConfigScreen {
                         .option(toggle("Hide Announcement Channel",
                                 "Hides the Essential announcement channel from the social tab.",
                                 defaults.hideAnnouncementChannel, () -> config.hideAnnouncementChannel, v -> config.hideAnnouncementChannel = v))
+                        .option(toggle("Hide Menu Paperdoll",
+                                "Removes the player model Essential draws on the title and pause screens. Applies the next time the menu opens.",
+                                defaults.hideMenuPaperdoll, () -> config.hideMenuPaperdoll, v -> config.hideMenuPaperdoll = v))
                         .option(toggle("Disable Auto-Update",
                                 "Prevents Essential from auto-updating by writing autoUpdate=false to its stage2 config. Takes effect next launch.",
                                 defaults.disableAutoUpdate, () -> config.disableAutoUpdate, v -> config.disableAutoUpdate = v))

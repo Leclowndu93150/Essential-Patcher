@@ -19,6 +19,8 @@ import java.util.UUID;
  * The CosmeticHttpSync hashes this so the actual server_id we send to the panel is opaque.
  */
 public final class SessionKey {
+    private static final String DEFAULT_PORT_SUFFIX = ":25565";
+
     private SessionKey() {
     }
 
@@ -27,7 +29,7 @@ public final class SessionKey {
         ServerData sd = mc.getCurrentServer();
         if (sd != null && sd.ip != null && !sd.ip.isBlank()) {
             String[] sps = fromEssentialSpsAddress(sd.ip);
-            return sps != null ? sps : new String[] { sd.ip.toLowerCase(Locale.ROOT), "smp" };
+            return sps != null ? sps : new String[] { normalizeAddress(sd.ip), "smp" };
         }
         IntegratedServer integ = mc.hasSingleplayerServer() ? mc.getSingleplayerServer() : null;
         if (integ != null) {
@@ -48,6 +50,17 @@ public final class SessionKey {
             return null;
         }
         return essentialSpsKey(spsAddress.getHost());
+    }
+
+    private static String normalizeAddress(String address) {
+        String normalized = address.trim().toLowerCase(Locale.ROOT);
+        if (normalized.endsWith(DEFAULT_PORT_SUFFIX)) {
+            normalized = normalized.substring(0, normalized.length() - DEFAULT_PORT_SUFFIX.length());
+        }
+        if (normalized.endsWith(".")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
     }
 
     private static String[] essentialSpsKey(UUID hostUuid) {

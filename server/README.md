@@ -46,7 +46,7 @@ The mod identifies itself once per launcher session with its UUID and username a
 
 ## HTTP API
 
-All responses JSON. Every endpoint except `/`, `/api/auth/login`, `/api/slots`, `/api/stats` requires `Authorization: Bearer <jwt>`.
+All responses JSON. Every endpoint except `/`, `/api/auth/login`, `/api/slots`, `/api/stats`, `/api/catalog/cosmetics` requires `Authorization: Bearer <jwt>`.
 
 ### Auth (once per launcher session)
 
@@ -79,6 +79,7 @@ Rate limited per IP (`AUTH_PER_MINUTE`). The JWT carries the UUID as its subject
 |--------|----------------|-------|
 | GET    | `/api/slots`   | Slot whitelist. |
 | GET    | `/api/stats`   | `{total_players, active_1d/7d/30d, live: {sessions, subscribers}}` |
+| GET    | `/api/catalog/cosmetics` | `{ids: [...]}` from the JSON array in `COSMETIC_CATALOG_FILE`. The mod asks Essential for any of these it doesn't already have, so cosmetics Essential no longer lists still show up in the wardrobe. Missing or invalid file returns an empty list. |
 
 ## SSE event shapes
 
