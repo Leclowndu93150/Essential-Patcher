@@ -18,41 +18,6 @@ public class TelemetryManagerMixin {
         }
     }
 
-    @Inject(method = "queueHardwareTelemetry", at = @At("HEAD"), cancellable = true)
-    private void onQueueHardware(CallbackInfo ci) {
-        if (PatcherConfig.get().disableTelemetry) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "sendInitialAutoUpdateState", at = @At("HEAD"), cancellable = true)
-    private void onSendInitialAutoUpdateState(CallbackInfo ci) {
-        if (PatcherConfig.get().disableTelemetry) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "setupAutoUpdateTracking", at = @At("HEAD"), cancellable = true)
-    private void onSetupAutoUpdateTracking(CallbackInfo ci) {
-        if (PatcherConfig.get().disableTelemetry) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "sendAutoUpdateTelemetry", at = @At("HEAD"), cancellable = true)
-    private void onSendAutoUpdate(CallbackInfo ci) {
-        if (PatcherConfig.get().disableTelemetry) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "sendDisplayData", at = @At("HEAD"), cancellable = true)
-    private void onSendDisplay(CallbackInfo ci) {
-        if (PatcherConfig.get().disableTelemetry) {
-            ci.cancel();
-        }
-    }
-
     @Inject(method = "clientActionPerformed(Lgg/essential/network/connectionmanager/telemetry/TelemetryManager$Actions;)V", at = @At("HEAD"), cancellable = true)
     private void onClientAction(CallbackInfo ci) {
         if (PatcherConfig.get().disableTelemetry) {

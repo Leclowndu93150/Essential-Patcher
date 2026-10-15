@@ -1,9 +1,7 @@
 package com.leclowndu93150.essentialpatcher.httpsync;
 
-import gg.essential.Essential;
-import gg.essential.network.connectionmanager.sps.SPSManager;
 import gg.essential.sps.SpsAddress;
-import gg.essential.upnp.model.UPnPSession;
+import gg.essential.util.USession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
@@ -11,6 +9,15 @@ import net.minecraft.client.server.IntegratedServer;
 import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Picks a session_id ingredient + label appropriate for the current connection.
+ * - Essential-hosted world (guest): the host's UUID from the SPS address.
+ * - Multiplayer: ip:port (lowercased).
+ * - Published singleplayer (host): the host's own UUID, matching what guests compute.
+ * - Singleplayer (not published): the world name.
+ *
+ * The CosmeticHttpSync hashes this so the actual server_id we send to the panel is opaque.
+ */
 public final class SessionKey {
     private static final String DEFAULT_PORT_SUFFIX = ":25565";
 
@@ -19,24 +26,19 @@ public final class SessionKey {
 
     public static String[] compute() {
         Minecraft mc = Minecraft.getInstance();
-        String[] sps = computeEssentialSps(mc);
-        if (sps != null) {
-            return sps;
-        }
-
         ServerData sd = mc.getCurrentServer();
         if (sd != null && sd.ip != null && !sd.ip.isBlank()) {
-            return new String[] { normalizeAddress(sd.ip), "smp" };
+            String[] sps = fromEssentialSpsAddress(sd.ip);
+            return sps != null ? sps : new String[] { normalizeAddress(sd.ip), "smp" };
         }
         IntegratedServer integ = mc.hasSingleplayerServer() ? mc.getSingleplayerServer() : null;
         if (integ != null) {
-            String world = integ.getWorldData() != null ? integ.getWorldData().getLevelName() : "world";
+            // Essential 1.5+ hosts worlds by publishing the integrated server; guests key on the host UUID,
+            // which Essential takes from its active session (can differ from mc.getUser() after an account switch).
             if (integ.isPublished()) {
-                String host = mc.getUser() != null && mc.getUser().getProfileId() != null
-                        ? mc.getUser().getProfileId().toString()
-                        : "host";
-                return new String[] { host + "|" + world, "lan" };
+                return essentialSpsKey(USession.Companion.activeNow().getUuid());
             }
+            String world = integ.getWorldData() != null ? integ.getWorldData().getLevelName() : "world";
             return new String[] { world, "sp" };
         }
         return null;
@@ -48,23 +50,6 @@ public final class SessionKey {
             return null;
         }
         return essentialSpsKey(spsAddress.getHost());
-    }
-
-    private static String[] computeEssentialSps(Minecraft mc) {
-        try {
-            SPSManager spsManager = Essential.getInstance().getConnectionManager().getSpsManager();
-            UPnPSession localSession = spsManager.getLocalSession();
-            if (localSession != null) {
-                return essentialSpsKey(localSession.getHostUUID());
-            }
-
-            ServerData serverData = mc.getCurrentServer();
-            if (serverData != null && serverData.ip != null) {
-                return fromEssentialSpsAddress(serverData.ip);
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
     }
 
     private static String normalizeAddress(String address) {

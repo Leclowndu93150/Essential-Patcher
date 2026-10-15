@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.leclowndu93150"
-version = "1.0.9"
+version = providers.gradleProperty("modVersion").getOrElse("1.0.9")
 
 prism {
     curseMaven()
@@ -17,7 +17,7 @@ prism {
 
     publishing {
 
-        changelog = "updated to Essential 1.5.0.1, added 26.3, fixed sale/banner/promo/new-cosmetic toggles broken by Essential 1.5.0, fixed shader glint corruption with particle cosmetics, fixed skins reverting to a default skin, 1.21.2 and 1.21.9 jars now tagged for 1.21.3-1.21.8 and 1.21.10, added Hide Menu Paperdoll, Hide Essential Cosmetics and Show Delisted Cosmetics"
+        changelog = "added 26.3 (Fabric); 1.21.11 and 26.3 now target Essential 1.5.1 (fixed the startup crash, retargeted telemetry, notice and shader glint patches, cosmetic sync for hosted worlds); fixed shader glint corruption with particle cosmetics and skins reverting to a default skin; 1.21.2 and 1.21.9 jars now tagged for 1.21.3-1.21.8 and 1.21.10; added Hide Menu Paperdoll, Hide Essential Cosmetics and Show Delisted Cosmetics; Disable auto-update now writes the files Essential actually reads; fixed cosmetic sync stalling after a quick rejoin"
         curseforge {
             accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
             projectId = "1555663"
@@ -45,8 +45,8 @@ prism {
         common {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -79,8 +79,8 @@ prism {
         common {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -102,10 +102,10 @@ prism {
             requires("yacl")
         }
         common {
-            localJar("libs/essential-1.21.11.jar")
+            localJar("libs/essential-1.21.9.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -114,7 +114,7 @@ prism {
                 disableAutoDetect()
             }
             dependencies {
-                localJar("libs/essential-1.21.11.jar")
+                localJar("libs/essential-1.21.9.jar")
                 modImplementation("curse.maven:yacl-667299:7437852")
                 modCompileOnly("curse.maven:modmenu-308702:7808781")
             }
@@ -128,8 +128,8 @@ prism {
         common {
             localJar("libs/essential-1.21.11.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -153,8 +153,8 @@ prism {
         common {
             localJar("libs/essential-26.1.2.jar")
             modCompileOnly("curse.maven:yacl-667299:7904436")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -171,18 +171,19 @@ prism {
     }
 
     version("26.3") {
+        minecraftVersions("26.3")
         publishingDependencies {
             requires("yacl")
         }
         common {
             localJar("libs/essential-26.3.jar")
             modCompileOnly("curse.maven:yacl-667299:8935498")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
-            loaderVersion = "0.19.5"
-            fabricApi("0.162.0+26.3")
+            loaderVersion = "0.18.6"
+            fabricApi("0.161.0+26.3")
             mixins {
                 disableAutoDetect()
             }
@@ -197,8 +198,8 @@ prism {
     version("1.19.2") {
         common {
             localJar("libs/essential-1.19.2.jar")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.16.14"
@@ -226,8 +227,8 @@ prism {
         common {
             localJar("libs/essential-1.20.1.jar")
             modCompileOnly("curse.maven:yacl-667299:6336646")
-            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.16.14"
