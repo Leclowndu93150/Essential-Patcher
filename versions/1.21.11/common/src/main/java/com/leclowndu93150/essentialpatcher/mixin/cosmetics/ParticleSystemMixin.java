@@ -16,7 +16,9 @@ public class ParticleSystemMixin {
     @Unique
     private int[] essentialPatcher$capturedStateSnapshot;
 
-    @Inject(method = "render-wYRpD5U(Lgg/essential/model/util/UMatrixStack;Lgg/essential/lib/kotgl/matrix/vectors/Vec3;Lgg/essential/model/util/Quaternion;Lgg/essential/model/backend/RenderBackend$CommandQueue;Lkotlin/uuid/Uuid;ZZLkotlin/uuid/Uuid;Lgg/essential/model/light/Light;)V", at = @At("HEAD"))
+    // render-<hash> is Kotlin-mangled; plain selectors reject '-', so match by regex.
+    // The hash changes with the Uuid/Light param types, hence not pinned.
+    @Inject(method = "name=/^render-\\w+$/", at = @At("HEAD"))
     private void essentialPatcher$isolateCapturedStateStart(CallbackInfo ci) {
         if (!PatcherConfig.get().fixShaderGlintCorruption) return;
         if (!ShaderCompat.isShaderPackActive()) return;
@@ -26,7 +28,7 @@ public class ParticleSystemMixin {
         IrisCompat.restoreCapturedState(new int[]{0, 0, 0});
     }
 
-    @Inject(method = "render-wYRpD5U(Lgg/essential/model/util/UMatrixStack;Lgg/essential/lib/kotgl/matrix/vectors/Vec3;Lgg/essential/model/util/Quaternion;Lgg/essential/model/backend/RenderBackend$CommandQueue;Lkotlin/uuid/Uuid;ZZLkotlin/uuid/Uuid;Lgg/essential/model/light/Light;)V", at = @At("RETURN"))
+    @Inject(method = "name=/^render-\\w+$/", at = @At("RETURN"))
     private void essentialPatcher$isolateCapturedStateEnd(CallbackInfo ci) {
         if (essentialPatcher$capturedStateSnapshot == null) return;
         IrisCompat.restoreCapturedState(essentialPatcher$capturedStateSnapshot);

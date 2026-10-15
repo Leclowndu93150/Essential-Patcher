@@ -43,6 +43,9 @@ in `config/PatcherConfig*` (1.19.2 has no YACL, so its config button opens
   `EssentialpatcherPreLaunch` (`Mixins.addConfiguration`), so it applies after Essential's own
   preLaunch. Forge/NeoForge register it in `mods.toml` / `neoforge.mods.toml`.
 - Each patch is gated by a boolean in `PatcherConfig` (persisted to `config/essentialpatcher.json`).
+- Kotlin-mangled targets (`render-<hash>`) are not valid plain selectors (Mixin rejects `-`); use a regex
+  selector like `name=/^render-\w+$/`. The build and `essential_compat.py` do not validate selector
+  strings, so launch the game and check `latest.log` for `essentialpatcher.mixins.json ... FAILED`.
 
 ## Build
 
@@ -59,7 +62,8 @@ in `config/PatcherConfig*` (1.19.2 has no YACL, so its config button opens
 - Other deps (YACL, Mod Menu, Essential runtime) come from CurseForge Maven via `curse.maven:*`.
 - Mod `version` and the publish `changelog` string live in `build.gradle.kts`; keep `CHANGELOG.md`
   in sync. Publishing reads `CURSEFORGE_TOKEN` / `MODRINTH_TOKEN` from the environment.
-- There are no automated tests and no CI. Verify by building and running the game.
+- There are no automated tests. `.github/workflows/build.yml` builds 1.21.11 and 26.3 (fetching Essential from its
+  update endpoint); other versions are not built in CI. Verify by building and running the game.
 
 ## Cosmetic sync (client side)
 
