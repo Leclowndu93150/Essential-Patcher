@@ -20,6 +20,7 @@ class Settings:
     jwt_ttl_seconds: int
     panel_endpoint: str
     panel_hmac_key: str
+    cosmetic_catalog_path: str
 
     @classmethod
     def load(cls):
@@ -40,4 +41,5 @@ class Settings:
             jwt_ttl_seconds=int(os.getenv("JWT_TTL_SECONDS", "72000")),
             panel_endpoint=os.getenv("PANEL_ENDPOINT", ""),
             panel_hmac_key=os.getenv("PANEL_HMAC_KEY", ""),
+            cosmetic_catalog_path=os.getenv("COSMETIC_CATALOG_FILE", "cosmetic_catalog.json"),
         )

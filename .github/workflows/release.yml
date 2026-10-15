@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, created at the selected commit if missing (e.g. v1.0.9)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: essentialpatcher-*-fabric
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Release notes are the CHANGELOG.md section of the tagged version.
+          awk -v v="${TAG#v}" '$0 == "## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Release ${TAG}" > notes.md
+          gh release create "$TAG" dist/*.jar --repo "$GITHUB_REPOSITORY" --title "$TAG" \
+            --notes-file notes.md --target "$GITHUB_SHA"

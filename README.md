@@ -94,8 +94,8 @@ The sync server runs on an OVH VPS located in France (EU). All data is subject t
 | 26.3 | Fabric |
 | 26.1.2 | Fabric |
 | 1.21.11 | Fabric |
-| 1.21.9 | Fabric |
-| 1.21.2 | Fabric |
+| 1.21.9 – 1.21.10 | Fabric |
+| 1.21.2 – 1.21.8 | Fabric |
 | 1.21.1 | NeoForge, Fabric |
 | 1.20.1 | Forge, Fabric |
 | 1.19.2 | Forge, Fabric |

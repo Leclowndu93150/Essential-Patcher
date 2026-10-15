@@ -2,8 +2,10 @@ package com.leclowndu93150.essentialpatcher.network;
 
 import com.leclowndu93150.essentialpatcher.cosmetics.CosmeticSaver;
 import com.leclowndu93150.essentialpatcher.httpsync.SyncedCosmeticOutfit;
+import com.leclowndu93150.essentialpatcher.mixin.cosmetics.InfraEquippedOutfitsManagerAccessor;
 import gg.essential.Essential;
 import gg.essential.cosmetics.EquippedCosmeticId;
+import gg.essential.mod.Skin;
 import gg.essential.mod.cosmetics.CosmeticSlot;
 import gg.essential.mod.cosmetics.settings.CosmeticSetting;
 import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager;
@@ -50,11 +52,16 @@ public class CosmeticSyncData {
             infraManager.update(playerUuid, new InfraEquippedOutfitsManager.InfraOutfit(
                     toInfraCosmetics(outfit.equipped()),
                     toInfraSettings(outfit.settings()),
-                    null
+                    currentSkin(infraManager, playerUuid)
             ));
         } catch (Exception e) {
             System.err.println("[EssentialPatcher] Failed to apply remote cosmetics for " + playerUuid + ": " + e.getMessage());
         }
+    }
+
+    public static Skin currentSkin(InfraEquippedOutfitsManager manager, UUID playerUuid) {
+        InfraEquippedOutfitsManager.InfraOutfit current = ((InfraEquippedOutfitsManagerAccessor) (Object) manager).essentialPatcher$getInfraOutfits().get(playerUuid);
+        return current != null ? current.getSkin() : null;
     }
 
     public static SyncedCosmeticOutfit fromEquippedOutfit(EquippedOutfitsManager.Outfit outfit) {

@@ -424,6 +424,22 @@ async def list_slots():
     return {"slots": sorted(KNOWN_SLOTS)}
 
 
+def _load_cosmetic_catalog(path, max_id_len):
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if not isinstance(data, list):
+        return []
+    return [i for i in data if isinstance(i, str) and 0 < len(i) <= max_id_len]
+
+
+@app.get("/api/catalog/cosmetics")
+async def cosmetic_catalog(request: Request):
+    cfg = request.app.state.cfg
+    return {"ids": _load_cosmetic_catalog(cfg.cosmetic_catalog_path, cfg.max_cosmetic_id_len)}
+
+
 @app.get("/api/stats")
 async def stats(request: Request):
     storage: Storage = request.app.state.storage
@@ -456,6 +472,7 @@ async def root():
         "  POST /api/cosmetics/batch  {uuids: [...]}\n\n"
         "misc:\n"
         "  GET  /api/slots\n"
+        "  GET  /api/catalog/cosmetics\n"
         "  GET  /api/stats\n\n"
-        "all endpoints except /api/auth/* and / require Authorization: Bearer <jwt>.\n"
+        "all endpoints except /api/auth/*, /api/slots, /api/stats, /api/catalog/* and / require Authorization: Bearer <jwt>.\n"
     )

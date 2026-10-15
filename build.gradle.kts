@@ -17,7 +17,7 @@ prism {
 
     publishing {
 
-        changelog = "added 26.3 (Fabric); 1.21.11 and 26.3 now target Essential 1.5.1 (fixed the startup crash, retargeted telemetry, notice and shader glint patches, cosmetic sync for hosted worlds); Disable auto-update now writes the files Essential actually reads; fixed cosmetic sync stalling after a quick rejoin"
+        changelog = "added 26.3 (Fabric); 1.21.11 and 26.3 now target Essential 1.5.1 (fixed the startup crash, retargeted telemetry, notice and shader glint patches, cosmetic sync for hosted worlds); fixed shader glint corruption with particle cosmetics and skins reverting to a default skin; 1.21.2 and 1.21.9 jars now tagged for 1.21.3-1.21.8 and 1.21.10; added Hide Menu Paperdoll, Hide Essential Cosmetics and Show Delisted Cosmetics; Disable auto-update now writes the files Essential actually reads; fixed cosmetic sync stalling after a quick rejoin"
         curseforge {
             accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
             projectId = "1555663"
@@ -72,6 +72,7 @@ prism {
     }
 
     version("1.21.2") {
+        minecraftVersions("1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8")
         publishingDependencies {
             requires("yacl")
         }
@@ -96,6 +97,7 @@ prism {
     }
 
     version("1.21.9") {
+        minecraftVersions("1.21.9", "1.21.10")
         publishingDependencies {
             requires("yacl")
         }
@@ -144,7 +146,7 @@ prism {
     }
 
     version("26.1.2") {
-        minecraftVersions("26.1.2", "26.2")
+        minecraftVersions("26.1", "26.1.1", "26.1.2", "26.2")
         publishingDependencies {
             requires("yacl")
         }

@@ -18,6 +18,8 @@ public class PatcherConfig {
     public boolean disableNewCosmeticDots = true;
     public boolean hideCosmeticsInInventoryWithShaders = true;
     public boolean fixShaderGlintCorruption = true;
+    public boolean showDelistedCosmetics = true;
+    public boolean hideEssentialCosmetics = false;
 
     public boolean disableTelemetry = true;
     public boolean disableFPSTelemetry = true;
@@ -39,6 +41,7 @@ public class PatcherConfig {
     public boolean disableWikiToast = true;
     public boolean skipCommunityRules = true;
     public boolean hideAnnouncementChannel = true;
+    public boolean hideMenuPaperdoll = false;
     public boolean disableAutoUpdate = false;
 
     public boolean httpCosmeticSync = true;
