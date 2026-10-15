@@ -11,7 +11,7 @@ pluginManagement {
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-    id("org.jetbrains.kotlin.jvm") version "2.1.20" apply false
+    id("org.jetbrains.kotlin.jvm") version "2.4.21" apply false
     id("dev.prism.settings") version "0.5.17"
 }
 
