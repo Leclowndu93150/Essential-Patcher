@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, created at the selected commit if missing (e.g. v1.0.9)"
-        required: true
+        description: "Release tag (e.g. v1.0.9). Leave empty to bump the patch of the latest v* tag."
+        required: false
 
 permissions:
   contents: read
@@ -28,6 +28,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
 
       - uses: actions/download-artifact@v8
         with:
@@ -38,11 +40,22 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          # Release notes are the CHANGELOG.md section of the tagged version.
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            TAG="$GITHUB_REF_NAME"
+          elif [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+          else
+            # Auto-increment: patch bump of the highest v<major>.<minor>.<patch> tag.
+            last="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)"
+            last="${last:-v1.0.0}"
+            IFS=. read -r major minor patch <<<"${last#v}"
+            TAG="v${major}.${minor}.$((patch + 1))"
+          fi
+          echo "Releasing ${TAG}"
+          # Release notes are the CHANGELOG.md section of the tagged version; fall back to generated notes.
           awk -v v="${TAG#v}" '$0 == "## " v {f=1; next} /^## /{f=0} f' CHANGELOG.md > notes.md
-          [ -s notes.md ] || echo "Release ${TAG}" > notes.md
-          gh release create "$TAG" dist/*.jar --repo "$GITHUB_REPOSITORY" --title "$TAG" \
-            --notes-file notes.md --target "$GITHUB_SHA"
+          if [ -s notes.md ]; then notes=(--notes-file notes.md); else notes=(--generate-notes); fi
+          gh release create "$TAG" dist/*.jar --repo "$GITHUB_REPOSITORY" --title "$TAG"             "${notes[@]}" --target "$GITHUB_SHA"
