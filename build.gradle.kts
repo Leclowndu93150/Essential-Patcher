@@ -46,7 +46,7 @@ prism {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -79,7 +79,7 @@ prism {
             localJar("libs/essential.jar")
             modCompileOnly("curse.maven:yacl-667299:7437845")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -103,7 +103,7 @@ prism {
             localJar("libs/essential-1.21.9.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -127,7 +127,7 @@ prism {
             localJar("libs/essential-1.21.11.jar")
             modCompileOnly("curse.maven:yacl-667299:7437853")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -152,7 +152,7 @@ prism {
             localJar("libs/essential-26.1.2.jar")
             modCompileOnly("curse.maven:yacl-667299:7904436")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -177,7 +177,7 @@ prism {
             localJar("libs/essential-26.3.jar")
             modCompileOnly("curse.maven:yacl-667299:8935498")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.18.6"
@@ -197,7 +197,7 @@ prism {
         common {
             localJar("libs/essential-1.19.2.jar")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.16.14"
@@ -226,7 +226,7 @@ prism {
             localJar("libs/essential-1.20.1.jar")
             modCompileOnly("curse.maven:yacl-667299:6336646")
             compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
         }
         fabric {
             loaderVersion = "0.16.14"
