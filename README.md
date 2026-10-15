@@ -91,17 +91,18 @@ The sync server runs on an OVH VPS located in France (EU). All data is subject t
 
 | Minecraft | Loaders |
 |-----------|---------|
-| 26.1.2 | Fabric |
+| 26.3 | Fabric |
+| 26.1 – 26.2 | Fabric |
 | 1.21.11 | Fabric |
-| 1.21.9 | Fabric |
-| 1.21.2 | Fabric |
+| 1.21.9 – 1.21.10 | Fabric |
+| 1.21.2 – 1.21.8 | Fabric |
 | 1.21.1 | NeoForge, Fabric |
 | 1.20.1 | Forge, Fabric |
 | 1.19.2 | Forge, Fabric |
 
 ## Requirements
 
-- Essential 1.4.1.1
+- Essential 1.5.0.1
 - YACL (Yet Another Config Lib) — not required on 1.19.2, which has no YACL build; there the config
   button opens `config/essentialpatcher.json` instead of a settings screen.
 

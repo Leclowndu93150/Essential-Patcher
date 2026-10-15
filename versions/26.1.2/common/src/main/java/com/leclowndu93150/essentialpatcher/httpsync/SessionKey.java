@@ -11,15 +11,9 @@ import net.minecraft.client.server.IntegratedServer;
 import java.util.Locale;
 import java.util.UUID;
 
-/**
- * Picks a session_id ingredient + label appropriate for the current connection.
- * - Multiplayer: ip:port (lowercased).
- * - LAN-published singleplayer: the world name plus the host's UUID so it's unique per host.
- * - Singleplayer (not published): the world name.
- *
- * The CosmeticHttpSync hashes this so the actual server_id we send to the panel is opaque.
- */
 public final class SessionKey {
+    private static final String DEFAULT_PORT_SUFFIX = ":25565";
+
     private SessionKey() {
     }
 
@@ -32,7 +26,7 @@ public final class SessionKey {
 
         ServerData sd = mc.getCurrentServer();
         if (sd != null && sd.ip != null && !sd.ip.isBlank()) {
-            return new String[] { sd.ip.toLowerCase(Locale.ROOT), "smp" };
+            return new String[] { normalizeAddress(sd.ip), "smp" };
         }
         IntegratedServer integ = mc.hasSingleplayerServer() ? mc.getSingleplayerServer() : null;
         if (integ != null) {
@@ -71,6 +65,17 @@ public final class SessionKey {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    private static String normalizeAddress(String address) {
+        String normalized = address.trim().toLowerCase(Locale.ROOT);
+        if (normalized.endsWith(DEFAULT_PORT_SUFFIX)) {
+            normalized = normalized.substring(0, normalized.length() - DEFAULT_PORT_SUFFIX.length());
+        }
+        if (normalized.endsWith(".")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
     }
 
     private static String[] essentialSpsKey(UUID hostUuid) {

@@ -2,6 +2,7 @@ package com.leclowndu93150.essentialpatcher.mixin.cosmetics;
 
 import com.leclowndu93150.essentialpatcher.config.PatcherConfig;
 import com.leclowndu93150.essentialpatcher.cosmetics.CosmeticSaver;
+import com.leclowndu93150.essentialpatcher.httpsync.CosmeticHttpSync;
 import com.leclowndu93150.essentialpatcher.httpsync.SyncedCosmeticOutfit;
 import com.leclowndu93150.essentialpatcher.network.CosmeticSyncData;
 import gg.essential.cosmetics.model.CosmeticUnlockData;
@@ -9,7 +10,9 @@ import gg.essential.event.client.ClientTickEvent;
 import gg.essential.gui.elementa.state.v2.MutableState;
 import gg.essential.network.connectionmanager.cosmetics.CosmeticsData;
 import gg.essential.network.connectionmanager.cosmetics.CosmeticsManager;
+import gg.essential.network.connectionmanager.cosmetics.InfraCosmeticsData;
 import gg.essential.network.connectionmanager.cosmetics.InfraEquippedOutfitsManager;
+import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -33,6 +36,9 @@ public abstract class CosmeticsManagerMixin {
     public abstract InfraEquippedOutfitsManager getInfraEquippedOutfitsManager();
 
     @Shadow
+    public abstract InfraCosmeticsData getInfraCosmeticsData();
+
+    @Shadow
     private MutableState<Boolean> cosmeticsLoaded;
 
     @Shadow
@@ -47,6 +53,9 @@ public abstract class CosmeticsManagerMixin {
     @Unique
     private int essentialPatcher$lastCatalogSize = -1;
 
+    @Unique
+    private boolean essentialPatcher$catalogRequested = false;
+
     @Inject(method = "addUnlockedCosmeticsData", at = @At("RETURN"))
     private void onUnlockedCosmeticsReceived(Map<String, CosmeticUnlockData> unlockedCosmeticsData, CallbackInfo ci) {
         if (PatcherConfig.get().unlockAllCosmetics) {
@@ -60,6 +69,13 @@ public abstract class CosmeticsManagerMixin {
     private void onTick(ClientTickEvent event, CallbackInfo ci) {
         if (!PatcherConfig.get().unlockAllCosmetics) return;
         if (!cosmeticsLoaded.getUntracked()) return;
+
+        if (!essentialPatcher$catalogRequested && PatcherConfig.get().showDelistedCosmetics) {
+            essentialPatcher$catalogRequested = true;
+            InfraCosmeticsData infraCosmeticsData = getInfraCosmeticsData();
+            CosmeticHttpSync.get().fetchCosmeticCatalog(ids ->
+                    Minecraft.getInstance().execute(() -> infraCosmeticsData.requestCosmeticsIfMissing(ids)));
+        }
 
         int catalogSize = cosmeticsData.getCosmetics().get().size();
         if (catalogSize == essentialPatcher$lastCatalogSize) return;
@@ -76,6 +92,7 @@ public abstract class CosmeticsManagerMixin {
     private void onResetState(CallbackInfo ci) {
         essentialPatcher$hasUnlockedThisSession = false;
         essentialPatcher$lastCatalogSize = -1;
+        essentialPatcher$catalogRequested = false;
     }
 
     @Inject(method = "removeUnlockedCosmetics", at = @At("HEAD"), cancellable = true)
@@ -108,7 +125,7 @@ public abstract class CosmeticsManagerMixin {
             var outfit = constructor.newInstance(
                     CosmeticSyncData.toInfraCosmetics(saved.equipped()),
                     CosmeticSyncData.toInfraSettings(saved.settings()),
-                    null
+                    CosmeticSyncData.currentSkin(manager, ownUuid)
             );
 
             manager.update(ownUuid, (InfraEquippedOutfitsManager.InfraOutfit) outfit);

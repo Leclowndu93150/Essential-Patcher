@@ -49,4 +49,8 @@ prism {
         common()
         fabric()
     }
+    version("26.3") {
+        common()
+        fabric()
+    }
 }

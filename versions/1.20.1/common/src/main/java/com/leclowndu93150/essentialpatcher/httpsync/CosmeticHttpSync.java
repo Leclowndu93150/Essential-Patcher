@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 public final class CosmeticHttpSync {
 
@@ -167,6 +168,29 @@ public final class CosmeticHttpSync {
                 pushTrigger(slot, emoteId);
             } catch (Exception e) {
                 System.err.println("[EssentialPatcher] http sync trigger failed: " + e.getMessage());
+            }
+        });
+    }
+
+    public void fetchCosmeticCatalog(Consumer<List<String>> onLoaded) {
+        if (!isEnabled()) return;
+        scheduler.submit(() -> {
+            try {
+                HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl() + "/api/catalog/cosmetics"))
+                        .timeout(Duration.ofSeconds(10))
+                        .GET()
+                        .build();
+                HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+                if (resp.statusCode() != 200) return;
+                List<String> ids = new ArrayList<>();
+                for (JsonElement id : GSON.fromJson(resp.body(), JsonObject.class).getAsJsonArray("ids")) {
+                    ids.add(id.getAsString());
+                }
+                if (!ids.isEmpty()) {
+                    onLoaded.accept(ids);
+                }
+            } catch (Exception e) {
+                System.err.println("[EssentialPatcher] cosmetic catalog fetch failed: " + e.getMessage());
             }
         });
     }

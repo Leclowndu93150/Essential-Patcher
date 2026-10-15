@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.leclowndu93150"
-version = "1.0.8"
+version = "1.0.9"
 
 prism {
     curseMaven()
@@ -17,7 +17,7 @@ prism {
 
     publishing {
 
-        changelog = "added Mod Menu integration on Fabric, added 1.19.2, fixed Skip Community Rules breaking friend requests, fixed the Modrinth install 404, cosmetic sync now reconnects on its own, updated to Essential 1.4.1.1"
+        changelog = "updated to Essential 1.5.0.1, added 26.3, fixed sale/banner/promo/new-cosmetic toggles broken by Essential 1.5.0, fixed shader glint corruption with particle cosmetics, fixed skins reverting to a default skin, 1.21.2 and 1.21.9 jars now tagged for 1.21.3-1.21.8 and 1.21.10, added Hide Menu Paperdoll, Hide Essential Cosmetics and Show Delisted Cosmetics"
         curseforge {
             accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
             projectId = "1555663"
@@ -72,6 +72,7 @@ prism {
     }
 
     version("1.21.2") {
+        minecraftVersions("1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8")
         publishingDependencies {
             requires("yacl")
         }
@@ -96,6 +97,7 @@ prism {
     }
 
     version("1.21.9") {
+        minecraftVersions("1.21.9", "1.21.10")
         publishingDependencies {
             requires("yacl")
         }
@@ -144,7 +146,7 @@ prism {
     }
 
     version("26.1.2") {
-        minecraftVersions("26.1.2", "26.2")
+        minecraftVersions("26.1", "26.1.1", "26.1.2", "26.2")
         publishingDependencies {
             requires("yacl")
         }
@@ -164,6 +166,30 @@ prism {
                 localJar("libs/essential-26.1.2.jar")
                 modImplementation("curse.maven:yacl-667299:7904436")
                 modCompileOnly("curse.maven:modmenu-308702:8065321")
+            }
+        }
+    }
+
+    version("26.3") {
+        publishingDependencies {
+            requires("yacl")
+        }
+        common {
+            localJar("libs/essential-26.3.jar")
+            modCompileOnly("curse.maven:yacl-667299:8935498")
+            compileOnly("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+            compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+        }
+        fabric {
+            loaderVersion = "0.19.5"
+            fabricApi("0.162.0+26.3")
+            mixins {
+                disableAutoDetect()
+            }
+            dependencies {
+                localJar("libs/essential-26.3.jar")
+                modImplementation("curse.maven:yacl-667299:8935498")
+                modCompileOnly("curse.maven:modmenu-308702:8958984")
             }
         }
     }
