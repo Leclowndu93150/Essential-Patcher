@@ -67,6 +67,6 @@ desktop.ini
 *~
 libs/essential*.jar
 
-.omc/
+.omc*
 .codegraph/
 .serena/
