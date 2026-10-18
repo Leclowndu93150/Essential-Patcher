@@ -1,9 +1,7 @@
 package com.leclowndu93150.essentialpatcher.httpsync;
 
 import gg.essential.Essential;
-import gg.essential.network.connectionmanager.sps.SPSManager;
 import gg.essential.sps.SpsAddress;
-import gg.essential.upnp.model.UPnPSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
@@ -52,17 +50,28 @@ public final class SessionKey {
 
     private static String[] computeEssentialSps(Minecraft mc) {
         try {
-            SPSManager spsManager = Essential.getInstance().getConnectionManager().getSpsManager();
-            UPnPSession localSession = spsManager.getLocalSession();
-            if (localSession != null) {
-                return essentialSpsKey(localSession.getHostUUID());
-            }
-
             ServerData serverData = mc.getCurrentServer();
             if (serverData != null && serverData.ip != null) {
                 return fromEssentialSpsAddress(serverData.ip);
             }
-        } catch (Exception ignored) {
+
+            var connManager = Essential.getInstance().getConnectionManager();
+            if (connManager != null) {
+                var method = connManager.getClass().getMethod("getSpsManager");
+                Object spsManager = method.invoke(connManager);
+                if (spsManager != null) {
+                    var sessionMethod = spsManager.getClass().getMethod("getLocalSession");
+                    Object localSession = sessionMethod.invoke(spsManager);
+                    if (localSession != null) {
+                        var hostMethod = localSession.getClass().getMethod("getHostUUID");
+                        UUID hostUuid = (UUID) hostMethod.invoke(localSession);
+                        if (hostUuid != null) {
+                            return essentialSpsKey(hostUuid);
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
         }
         return null;
     }
