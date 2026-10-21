@@ -1,9 +1,6 @@
 package com.leclowndu93150.essentialpatcher.httpsync;
 
-import gg.essential.Essential;
-import gg.essential.network.connectionmanager.sps.SPSManager;
 import gg.essential.sps.SpsAddress;
-import gg.essential.upnp.model.UPnPSession;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
@@ -52,17 +49,16 @@ public final class SessionKey {
 
     private static String[] computeEssentialSps(Minecraft mc) {
         try {
-            SPSManager spsManager = Essential.getInstance().getConnectionManager().getSpsManager();
-            UPnPSession localSession = spsManager.getLocalSession();
-            if (localSession != null) {
-                return essentialSpsKey(localSession.getHostUUID());
+            UUID localHost = EssentialSpsSyncListener.localHost();
+            if (localHost != null) {
+                return essentialSpsKey(localHost);
             }
 
             ServerData serverData = mc.getCurrentServer();
             if (serverData != null && serverData.ip != null) {
                 return fromEssentialSpsAddress(serverData.ip);
             }
-        } catch (Exception ignored) {
+        } catch (Exception | LinkageError ignored) {
         }
         return null;
     }

@@ -102,7 +102,7 @@ The sync server runs on an OVH VPS located in France (EU). All data is subject t
 
 ## Requirements
 
-- Essential 1.5.0.1
+- Essential 1.5.1 (1.4.1.1 on Minecraft versions Essential no longer updates)
 - YACL (Yet Another Config Lib) — not required on 1.19.2, which has no YACL build; there the config
   button opens `config/essentialpatcher.json` instead of a settings screen.
 

@@ -23,5 +23,12 @@ versionRange = "[1.19.2,)"
 ordering = "NONE"
 side = "BOTH"
 
+[[dependencies.essentialpatcher]]
+modId = "essential"
+mandatory = true
+versionRange = "[1.5.1,)"
+ordering = "NONE"
+side = "CLIENT"
+
 [[mixins]]
 config = "essentialpatcher.mixins.json"

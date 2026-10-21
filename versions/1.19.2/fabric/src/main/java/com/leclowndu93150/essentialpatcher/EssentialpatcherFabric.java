@@ -19,6 +19,7 @@ public class EssentialpatcherFabric implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        EssentialVersion.require("1.5.1");
         PatcherConfig config = PatcherConfig.get();
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {

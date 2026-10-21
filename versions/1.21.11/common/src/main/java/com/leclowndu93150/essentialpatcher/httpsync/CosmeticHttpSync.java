@@ -54,6 +54,7 @@ public final class CosmeticHttpSync {
     }
 
     private final HttpClient http = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(10))
             .build();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2, r -> {
